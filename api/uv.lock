@@ -140,52 +140,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fast-next-starter-api"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "alembic" },
-    { name = "fastapi" },
-    { name = "mangum" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "python-dotenv" },
-    { name = "sqlalchemy" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "black" },
-    { name = "flake8" },
-    { name = "httpx" },
-    { name = "isort" },
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = "==1.13.1" },
-    { name = "black", marker = "extra == 'dev'", specifier = "==24.2.0" },
-    { name = "fastapi", specifier = "==0.109.2" },
-    { name = "flake8", marker = "extra == 'dev'", specifier = "==7.0.0" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = "==0.26.0" },
-    { name = "isort", marker = "extra == 'dev'", specifier = "==5.13.2" },
-    { name = "mangum", specifier = "==0.17.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = "==1.8.0" },
-    { name = "pydantic", specifier = "==2.6.1" },
-    { name = "pydantic-settings", specifier = "==2.1.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = "==8.0.1" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = "==0.23.5" },
-    { name = "python-dotenv", specifier = "==1.0.1" },
-    { name = "sqlalchemy", specifier = "==2.0.27" },
-    { name = "uvicorn", extras = ["standard"], specifier = "==0.27.1" },
-]
-provides-extras = ["dev"]
-
-[[package]]
 name = "fastapi"
 version = "0.109.2"
 source = { registry = "https://pypi.org/simple" }
@@ -953,6 +907,52 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e1/24/a5da6aba58f99aed5255eca87d58d1760853e8302d390820cc29058408e3/uvloop-0.21.0-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:221f4f2a1f46032b403bf3be628011caf75428ee3cc204a22addf96f586b19fd", size = 3705833, upload-time = "2024-10-14T23:38:31.155Z" },
     { url = "https://files.pythonhosted.org/packages/1a/5c/6ba221bb60f1e6474474102e17e38612ec7a06dc320e22b687ab563d877f/uvloop-0.21.0-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:2d1f581393673ce119355d56da84fe1dd9d2bb8b3d13ce792524e1607139feff", size = 3804696, upload-time = "2024-10-14T23:38:33.633Z" },
 ]
+
+[[package]]
+name = "veramate-api"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "alembic" },
+    { name = "fastapi" },
+    { name = "mangum" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "python-dotenv" },
+    { name = "sqlalchemy" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "black" },
+    { name = "flake8" },
+    { name = "httpx" },
+    { name = "isort" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = "==1.13.1" },
+    { name = "black", marker = "extra == 'dev'", specifier = "==24.2.0" },
+    { name = "fastapi", specifier = "==0.109.2" },
+    { name = "flake8", marker = "extra == 'dev'", specifier = "==7.0.0" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = "==0.26.0" },
+    { name = "isort", marker = "extra == 'dev'", specifier = "==5.13.2" },
+    { name = "mangum", specifier = "==0.17.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = "==1.8.0" },
+    { name = "pydantic", specifier = "==2.6.1" },
+    { name = "pydantic-settings", specifier = "==2.1.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = "==8.0.1" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = "==0.23.5" },
+    { name = "python-dotenv", specifier = "==1.0.1" },
+    { name = "sqlalchemy", specifier = "==2.0.27" },
+    { name = "uvicorn", extras = ["standard"], specifier = "==0.27.1" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "watchfiles"
