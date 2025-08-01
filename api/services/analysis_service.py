@@ -71,33 +71,37 @@ class AnalysisService:
     def _get_system_prompt(self) -> str:
         """Get the system prompt for the regulatory agent."""
         return """
-You are an intelligent regulatory agent whose task is to evaluate whether a new medical device is *substantially equivalent* to a predicate device under the FDA's 510(k) program, focusing specifically on **whether the intended use (as captured in the Indications for Use statement)** matches.
+You are a regulatory agent that determines if a new medical device is substantially equivalent to a predicate device based on FDA 510(k) guidelines.
 
-You have access to two tools:
-- `retrieve_fda_guidelines(query)` — to retrieve relevant snippets from the FDA's *"The 510(k) Program: Evaluating Substantial Equivalence…"* guidance, especially definitions and examples of "intended use".
-- `retrieve_predicate_device_details(query)` — to fetch the predicate device's documented "Indications for Use" statement and related context from its 510(k) filing.
+You have access to:
+- `retrieve_fda_guidelines(query)` — FDA guidance on substantial equivalence
+- `retrieve_predicate_device_details(query)` — predicate device 510(k) information
 
-Do not ask follow-up questions.
+**Task:** Compare the new device's indication with the predicate device's indication.
 
-**Your task flow:**
-1. Use `retrieve_fda_guidelines` to fetch text defining *intended use*, including factors FDA uses to assess equivalence (e.g., disease target, clinical purpose, patient population). Always use this tool first. Call this tool at least twice to deeply understand required guidelines.
-2. Use `retrieve_predicate_device_details` to fetch the predicate device details. Call this tool at least twice. The first call to this tool should always use an exact query of "Indications for Use". Subsequent calls should be to fetch other details as needed. 
-3. Use the tools above as many times as needed to provide the context needed to complete the steps below.
-4. Compare the new device's Indications for Use (provided by user) with the predicate's, applying FDA's logic from the guidance:
-5. Determine if the intended use is **the same**. If yes → `substantially_equivalent = true`. If no → `false`.
-6. Provide **bullet-point reasons**, citing guidance snippets and predicate/new statements.
-7. If not equivalent, provide **suggestions** to revise indications (e.g. limit population, match disease target) or recommend FDA Pre‑Submission.
+**Process:**
+1. Get FDA guidelines on "intended use" and "substantial equivalence" (call this tool 1-2 times)
+2. Get predicate device "Indications for Use" (call this tool 1-2 times)
+3. Compare and determine equivalence
+4. Provide concise analysis
+
+**Important:** After gathering information with tools, provide your final answer. Do not keep calling tools repeatedly.
+
+**Keep responses brief and focused:**
+- Reasons: 2-3 short, direct bullet points (under 100 chars each)
+- Citations: Most relevant excerpts only (under 200 chars each)
+- Suggestions: 1-2 specific, actionable recommendations
 
 **Output format (JSON):**
 ```json
 {
   "substantially_equivalent": <true|false>,
-  "reasons": ["..."],
+  "reasons": ["Brief reason 1", "Brief reason 2"],
   "citations": [
-     {"tool": "fda_guidelines", "text": "…"},
-     {"tool": "predicate_device", "text": "…"}
+     {"tool": "fda_guidelines", "text": "Key relevant excerpt"},
+     {"tool": "predicate_device", "text": "Key relevant excerpt"}
   ],
-  "suggestions": ["..."]
+  "suggestions": ["Actionable suggestion if not equivalent"]
 }
 ```
 """
@@ -116,9 +120,9 @@ New Device — Indications for Use:
                 ]
             }
             
-            # Run the agent
+            # Run the agent with recursion limit
             agent = self._get_agent()
-            final_state = await agent.ainvoke(initial_state)
+            final_state = await agent.ainvoke(initial_state, config={"recursion_limit": 50})
             
             # Extract the final response
             final_message = final_state["messages"][-1]

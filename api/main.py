@@ -11,6 +11,24 @@ from routes.analysis import router as analysis_router
 from services.pdf_service import pdf_service
 
 
+def configure_langsmith():
+    """Configure LangSmith tracing based on environment settings."""
+    settings = get_settings()
+    
+    # Set LangSmith environment variables
+    os.environ["LANGCHAIN_TRACING_V2"] = settings.LANGCHAIN_TRACING_V2
+    os.environ["LANGCHAIN_PROJECT"] = settings.LANGCHAIN_PROJECT
+    
+    if settings.LANGSMITH_API_KEY:
+        os.environ["LANGSMITH_API_KEY"] = settings.LANGSMITH_API_KEY
+    
+    # Log tracing status
+    if settings.LANGCHAIN_TRACING_V2.lower() == "true":
+        print(f"🔍 LangSmith tracing enabled for project: {settings.LANGCHAIN_PROJECT}")
+    else:
+        print("📝 LangSmith tracing disabled")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -19,6 +37,9 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     print("Starting up...")
+    
+    # Configure LangSmith tracing
+    configure_langsmith()
     
     # Initialize FDA guidelines on startup
     guidelines_path = os.path.join(os.path.dirname(__file__), "../notebooks/data/510K - Evaluating Substantial Equivalence.pdf")
