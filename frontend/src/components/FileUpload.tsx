@@ -79,7 +79,7 @@ export default function FileUpload({ onUploadSuccess, isUploaded = false }: File
 
   return (
     <div className="w-full">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <h3 className="text-lg font-semibold text-slate-800 mb-4">
         Upload 510(K) Document for Predicate Device
       </h3>
       
@@ -87,14 +87,14 @@ export default function FileUpload({ onUploadSuccess, isUploaded = false }: File
         className={`
           border-2 border-dashed rounded-lg p-8 text-center transition-colors
           ${isUploaded 
-            ? 'border-green-300 bg-green-50 opacity-75 cursor-not-allowed' 
+            ? 'border-emerald-300 bg-emerald-50 opacity-75 cursor-not-allowed' 
             : dragActive 
               ? 'border-blue-500 bg-blue-50' 
-              : 'border-gray-300'
+              : 'border-slate-300'
           }
           ${isUploading || isUploaded 
             ? 'opacity-50 cursor-not-allowed' 
-            : 'cursor-pointer hover:border-gray-400'
+            : 'cursor-pointer hover:border-slate-400'
           }
         `}
         onDragOver={(e) => {
@@ -122,20 +122,20 @@ export default function FileUpload({ onUploadSuccess, isUploaded = false }: File
         ) : isUploaded ? (
           <div className="flex flex-col items-center">
             <div className="text-4xl mb-4">✅</div>
-            <p className="text-lg text-green-700 mb-2 font-medium">
+            <p className="text-lg text-emerald-700 mb-2 font-medium">
               Document Successfully Uploaded
             </p>
-            <p className="text-sm text-green-600">
+            <p className="text-sm text-emerald-600">
               PDF processed and ready for analysis
             </p>
           </div>
         ) : (
           <div>
             <div className="text-4xl mb-4">📄</div>
-            <p className="text-lg text-gray-700 mb-2">
+            <p className="text-lg text-slate-700 mb-2">
               Drop your 510(K) PDF here or click to browse
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-500">
               PDF files only, up to 10MB
             </p>
           </div>

@@ -79,7 +79,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <Header />
       
       <Hero onTryNowClick={handleTryNowClick} />
@@ -88,26 +88,26 @@ export default function Home() {
       
       <section 
         ref={functionalUIRef}
-        className="py-16 bg-white border-t border-gray-200"
+        className="py-16 bg-white border-t border-slate-200"
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">
               Try VeraMate Now
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-slate-600">
               Upload your predicate device 510(k) document and analyze substantial equivalence
             </p>
           </div>
           
           <div className="space-y-8">
             {/* Step 1: Upload PDF */}
-            <div className="bg-gray-50 rounded-lg p-8">
+            <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
               <div className="flex items-center mb-4">
-                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
+                <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
                   1
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Upload Predicate Device Document</h3>
+                <h3 className="text-lg font-semibold text-slate-800">Upload Predicate Device Document</h3>
               </div>
               <FileUpload 
                 onUploadSuccess={handleUploadSuccess} 
@@ -117,12 +117,12 @@ export default function Home() {
 
             {/* Step 2: Document Summary */}
             {documentSummary && (
-              <div className="bg-gray-50 rounded-lg p-8">
+              <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
                 <div className="flex items-center mb-4">
-                  <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
+                  <div className="bg-emerald-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
                     2
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Review Document Summary</h3>
+                  <h3 className="text-lg font-semibold text-slate-800">Review Document Summary</h3>
                 </div>
                 <DocumentSummary summary={documentSummary} />
               </div>
@@ -130,12 +130,12 @@ export default function Home() {
 
             {/* Step 3: New Device Input */}
             {documentSummary && (
-              <div className="bg-gray-50 rounded-lg p-8">
+              <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
                 <div className="flex items-center mb-4">
-                  <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
+                  <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
                     3
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Enter New Device Information</h3>
+                  <h3 className="text-lg font-semibold text-slate-800">Enter New Device Information</h3>
                 </div>
                 <IndicationInput 
                   onSubmit={handleAnalyzeDevice}
@@ -146,12 +146,12 @@ export default function Home() {
 
             {/* Step 4: Analysis Results */}
             {analysisResult && (
-              <div className="bg-gray-50 rounded-lg p-8">
+              <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
                 <div className="flex items-center mb-4">
-                  <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
+                  <div className="bg-emerald-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
                     4
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Analysis Results</h3>
+                  <h3 className="text-lg font-semibold text-slate-800">Analysis Results</h3>
                 </div>
                 <AnalysisResults result={analysisResult} />
               </div>

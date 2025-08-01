@@ -32,7 +32,7 @@ export default function IndicationInput({ onSubmit, isAnalyzing }: IndicationInp
             id="indication"
             value={indication}
             onChange={(e) => setIndication(e.target.value)}
-            className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+            className="w-full h-32 p-4 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-500 bg-white"
             placeholder="Example: For use in the non-invasive diagnosis of coronary artery disease in adult patients through measurement of fractional flow reserve."
             disabled={isAnalyzing}
           />
@@ -44,8 +44,8 @@ export default function IndicationInput({ onSubmit, isAnalyzing }: IndicationInp
           className={`
             w-full py-3 px-6 rounded-lg text-white font-semibold transition duration-200
             ${!indication.trim() || isAnalyzing
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
+              ? 'bg-slate-400 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-xl'
             }
           `}
         >
