@@ -104,7 +104,7 @@ export default function Home() {
             {/* Step 1: Upload PDF */}
             <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
               <div className="flex items-center mb-4">
-                <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
+                <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
                   1
                 </div>
                 <h3 className="text-lg font-semibold text-slate-800">Upload Predicate Device Document</h3>
@@ -132,7 +132,7 @@ export default function Home() {
             {documentSummary && (
               <div className="bg-slate-50 rounded-xl p-8 border border-slate-200">
                 <div className="flex items-center mb-4">
-                  <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
+                  <div className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
                     3
                   </div>
                   <h3 className="text-lg font-semibold text-slate-800">Enter New Device Information</h3>

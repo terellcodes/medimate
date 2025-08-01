@@ -22,7 +22,7 @@ export default function FeatureCards() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="text-center p-8 bg-white rounded-xl border border-slate-200 hover:shadow-xl transition duration-300 hover:border-blue-300">
+            <div key={index} className="text-center p-8 bg-white rounded-xl border border-slate-200 hover:shadow-xl transition duration-300 hover:border-green-300">
               <div className="text-4xl mb-4">{feature.icon}</div>
               <h3 className="text-xl font-semibold text-slate-800 mb-4">
                 {feature.title}

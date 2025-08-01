@@ -4,7 +4,7 @@ interface HeroProps {
 
 export default function Hero({ onTryNowClick }: HeroProps) {
   return (
-    <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 py-20 text-white">
+    <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-green-900 py-20 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-5xl font-bold mb-6">
@@ -17,7 +17,7 @@ export default function Hero({ onTryNowClick }: HeroProps) {
           </p>
           <button 
             onClick={onTryNowClick}
-            className="bg-blue-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-600 transition duration-200 shadow-xl border border-blue-400"
+            className="bg-green-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-600 transition duration-200 shadow-xl border border-green-400"
           >
             Get Started
           </button>

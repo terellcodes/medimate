@@ -89,7 +89,7 @@ export default function FileUpload({ onUploadSuccess, isUploaded = false }: File
           ${isUploaded 
             ? 'border-emerald-300 bg-emerald-50 opacity-75 cursor-not-allowed' 
             : dragActive 
-              ? 'border-blue-500 bg-blue-50' 
+              ? 'border-green-500 bg-green-50' 
               : 'border-slate-300'
           }
           ${isUploading || isUploaded 
@@ -116,7 +116,7 @@ export default function FileUpload({ onUploadSuccess, isUploaded = false }: File
         
         {isUploading ? (
           <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-4"></div>
             <p className="text-gray-600">Processing PDF...</p>
           </div>
         ) : isUploaded ? (
