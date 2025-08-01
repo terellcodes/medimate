@@ -7,6 +7,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 import os
+import asyncio
 from config.settings import get_settings
 
 
@@ -80,7 +81,7 @@ class VectorStoreManager:
         await guidelines_store.aadd_documents(documents=chunks)
         
     async def load_predicate_device_document(self, pdf_path: str) -> dict:
-        """Load predicate device PDF and return summary info."""
+        """Load predicate device PDF and return summary info using AI extraction."""
         loader = PyPDFLoader(pdf_path)
         documents = loader.load()
         
@@ -95,9 +96,33 @@ class VectorStoreManager:
         predicate_store = self.get_predicate_device_vector_store()
         await predicate_store.aadd_documents(documents=chunks)
         
-        # Extract summary information from the document
-        summary = self._extract_document_summary(documents[0] if documents else None)
+        # Use AI-powered extraction instead of simple text parsing
+        summary = await self._extract_document_summary_ai(predicate_store)
         return summary
+    
+    async def _extract_document_summary_ai(self, predicate_store: QdrantVectorStore) -> dict:
+        """Extract document summary using AI-powered parallel extraction."""
+        try:
+            # Import here to avoid circular imports
+            from services.document_parser_service import document_parser_service
+            
+            # Get retriever for the predicate device vector store
+            retriever = predicate_store.as_retriever(search_kwargs={"k": 5})
+            
+            # Use parallel AI extraction
+            extracted_fields = await document_parser_service.parse_document(retriever)
+            
+            return extracted_fields
+            
+        except Exception as e:
+            print(f"AI extraction failed, falling back to simple extraction: {str(e)}")
+            # Fallback to simple extraction if AI fails
+            return {
+                "device_name": "Unknown",
+                "manufacturer": "Unknown",
+                "indication_of_use": "Not specified", 
+                "description": "510(k) medical device"
+            }
     
     def _extract_document_summary(self, document: Optional[Document]) -> dict:
         """Extract key information from a 510(k) document."""
