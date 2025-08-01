@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     # API Settings
     API_V1_PREFIX: str = "/api/v1"
     
+    # OpenAI Settings
+    OPENAI_API_KEY: str = ""
+    
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",  # Local frontend

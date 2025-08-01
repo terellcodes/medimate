@@ -16,10 +16,16 @@ dependencies = [
     "mangum==0.17.0",
     "langchain-pymupdf4llm>=0.4.1",
     "python-multipart>=0.0.20",
-    "langchain-openai>=0.3.28",
-    "langchain-community>=0.3.27",
-    "langchain-core>=0.3.72",
-    "langchain>=0.3.27",
+    "langchain-openai>=0.3.0",
+    "langchain-community>=0.3.0", 
+    "langchain-core>=0.3.0",
+    "langchain>=0.3.0",
+    "langgraph>=0.2.0",
+    "langchain-qdrant>=0.2.0",
+    "qdrant-client>=1.10.0",
+    "langchain-text-splitters>=0.3.0",
+    "pypdf>=4.0.0",
+    "aiofiles>=23.1.0",
 ]
 requires-python = ">=3.9"
 

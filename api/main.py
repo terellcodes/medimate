@@ -2,9 +2,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
+import os
 
 from config.settings import get_settings, Settings
 from utils.constants import ResponseMessage, StatusCode
+from routes.upload import router as upload_router
+from routes.analysis import router as analysis_router
+from services.pdf_service import pdf_service
 
 
 @asynccontextmanager
@@ -15,6 +19,24 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     print("Starting up...")
+    
+    # Initialize FDA guidelines on startup
+    guidelines_path = os.path.join(os.path.dirname(__file__), "../notebooks/data/510K - Evaluating Substantial Equivalence.pdf")
+    guidelines_path = os.path.abspath(guidelines_path)
+    
+    if os.path.exists(guidelines_path):
+        try:
+            success = await pdf_service.initialize_fda_guidelines(guidelines_path)
+            if success:
+                print("FDA guidelines loaded successfully")
+            else:
+                print("Failed to load FDA guidelines")
+        except Exception as e:
+            print(f"Error loading FDA guidelines: {str(e)}")
+    else:
+        print(f"FDA guidelines not found at: {guidelines_path}")
+        print("API will start without FDA guidelines preloaded")
+    
     yield
     # Shutdown
     print("Shutting down...")
@@ -42,6 +64,10 @@ def create_application() -> FastAPI:
         allow_methods=settings.ALLOWED_METHODS,
         allow_headers=settings.ALLOWED_HEADERS,
     )
+    
+    # Include routers
+    app.include_router(upload_router)
+    app.include_router(analysis_router)
 
     return app
 
