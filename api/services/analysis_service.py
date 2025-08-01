@@ -5,6 +5,7 @@ from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from services.rag_service import retrieve_fda_guidelines, retrieve_predicate_device_details
+from config.settings import get_settings
 import json
 
 
@@ -24,7 +25,12 @@ class AnalysisService:
     def _get_llm(self):
         """Lazy initialization of LLM."""
         if self.llm is None:
-            self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+            settings = get_settings()
+            self.llm = ChatOpenAI(
+                model="gpt-4o-mini", 
+                temperature=0,
+                openai_api_key=settings.OPENAI_API_KEY
+            )
         return self.llm
     
     def _get_agent(self):

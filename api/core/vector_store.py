@@ -7,6 +7,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 import os
+from config.settings import get_settings
 
 
 class VectorStoreManager:
@@ -27,7 +28,11 @@ class VectorStoreManager:
     def _get_embedding_model(self):
         """Lazy initialization of embedding model."""
         if self.embedding_model is None:
-            self.embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
+            settings = get_settings()
+            self.embedding_model = OpenAIEmbeddings(
+                model="text-embedding-3-small",
+                openai_api_key=settings.OPENAI_API_KEY
+            )
         return self.embedding_model
         
     def _initialize_collections(self):
