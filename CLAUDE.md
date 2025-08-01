@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-VeraMate is a full-stack application with separate API and frontend services:
+Vera is a full-stack application with separate API and frontend services:
 
 ### API (FastAPI Backend)
 - **Location**: `api/` directory

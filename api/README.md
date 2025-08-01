@@ -1,6 +1,6 @@
-# FastNext Starter API
+# Vera API
 
-A FastAPI backend for the Fast Next Starter project.
+A FastAPI backend for the Vera project.
 
 ## Project Structure
 
@@ -199,8 +199,8 @@ When deploying to Vercel, you need to configure the following environment variab
 
 | Variable | Description | Default Value |
 |----------|-------------|---------------|
-| `APP_NAME` | Name of your API | `"FastNext Starter API"` |
-| `APP_DESCRIPTION` | API description | `"A FastAPI backend for the Fast Next Starter project"` |
+| `APP_NAME` | Name of your API | `"Vera API"` |
+| `APP_DESCRIPTION` | API description | `"A FastAPI backend for the Vera project"` |
 | `APP_VERSION` | API version | `"0.1.0"` |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `https://your-domain.vercel.app,https://*.vercel.app` |
 

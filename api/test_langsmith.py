@@ -7,7 +7,7 @@ from config.settings import get_settings
 
 def test_langsmith_configuration():
     """Test LangSmith configuration."""
-    print("🧪 Testing LangSmith Configuration\n")
+    print("🧪 Testing LangSmith Configuration for Vera\n")
     
     # Get settings
     settings = get_settings()

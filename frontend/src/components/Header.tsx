@@ -9,7 +9,7 @@ export default function Header() {
                 <span className="text-white font-bold text-sm">V</span>
               </div>
               <h1 className="text-2xl font-bold text-white">
-                VeraMate
+                Vera
               </h1>
             </div>
           </div>

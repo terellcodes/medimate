@@ -11,7 +11,7 @@ export default function Hero({ onTryNowClick }: HeroProps) {
             Streamline Your 510(k) Process
           </h1>
           <p className="text-xl text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            VeraMate uses AI-powered analysis to help medical device companies 
+            Vera uses AI-powered analysis to help medical device companies 
             determine substantial equivalence faster and more accurately. Upload your 
             predicate device documentation and get instant regulatory insights.
           </p>

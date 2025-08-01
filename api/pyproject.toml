@@ -1,7 +1,7 @@
 [project]
-name = "veramate-api"
+name = "vera-api"
 version = "0.1.0"
-description = "FastAPI backend for the Veramate project"
+description = "FastAPI backend for the Vera project"
 authors = [
     { name = "Your Name", email = "your.email@example.com" }
 ]

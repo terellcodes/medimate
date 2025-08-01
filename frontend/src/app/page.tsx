@@ -93,7 +93,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-slate-800 mb-4">
-              Try VeraMate Now
+              Try Vera Now
             </h2>
             <p className="text-lg text-slate-600">
               Upload your predicate device 510(k) document and analyze substantial equivalence

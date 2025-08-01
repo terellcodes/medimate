@@ -7,7 +7,7 @@ import time
 
 def test_trace_generation():
     """Test that API calls generate LangSmith traces."""
-    print("🧪 Testing LangSmith Trace Generation\n")
+    print("🧪 Testing LangSmith Trace Generation for Vera\n")
     
     try:
         # Test with a simple analysis request
@@ -40,7 +40,7 @@ def test_trace_generation():
                 print("    • LangGraph agent execution")
                 
                 print(f"\n🌐 Check your traces at:")
-                print(f"   https://smith.langchain.com/projects/p/VeraMate")
+                print(f"   https://smith.langchain.com/projects/p/Vera")
                 
                 return True
             else:
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         print("\n🎉 Trace generation test completed successfully!")
         print("\n📋 What to check in LangSmith:")
         print("  1. Go to https://smith.langchain.com")
-        print("  2. Navigate to the 'VeraMate' project")
+        print("  2. Navigate to the 'Vera' project")
         print("  3. Look for recent traces from the API call")
         print("  4. Traces should show:")
         print("     • Agent execution steps")
