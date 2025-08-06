@@ -53,3 +53,5 @@ venv/
 ENV/
 
 TODO.md
+
+project/data/

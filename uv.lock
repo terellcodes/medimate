@@ -2540,6 +2540,11 @@ dependencies = [
     { name = "qdrant-client" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "requests" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "ipykernel", specifier = ">=6.30.0" },
@@ -2552,6 +2557,9 @@ requires-dist = [
     { name = "pypdf", specifier = ">=5.9.0" },
     { name = "qdrant-client", specifier = ">=1.15.1" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "requests", specifier = ">=2.32.4" }]
 
 [[package]]
 name = "wcwidth"
