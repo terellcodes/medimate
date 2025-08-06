@@ -1,22 +1,22 @@
 const features = [
   {
-    title: "AI-Powered Analysis",
-    description: "Advanced language models analyze your predicate device documentation against FDA guidelines to determine substantial equivalence.",
-    icon: "🤖"
+    title: "Intelligent Search",
+    description: "Combine device keywords with FDA product codes for precise predicate discovery. Search by technology, indication, or manufacturer.",
+    icon: "🔍"
   },
   {
-    title: "Instant Results", 
-    description: "Get comprehensive equivalence analysis in minutes, not weeks. Our system provides detailed reasoning and regulatory insights.",
-    icon: "⚡"
+    title: "Complete Device Data", 
+    description: "Get comprehensive device metadata, clearance dates, document availability, and safety status from the official FDA database.",
+    icon: "📊"
   },
   {
-    title: "Regulatory Compliance",
-    description: "Built on official FDA 510(k) guidelines and best practices to ensure your analysis meets regulatory standards.",
-    icon: "✅"
+    title: "Official FDA Database",
+    description: "Search directly from openFDA 510(k) database with real-time data covering devices from 1976 to present.",
+    icon: "🏛️"
   }
 ];
 
-export default function FeatureCards() {
+export default function PredicateFeatures() {
   return (
     <section className="py-16 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

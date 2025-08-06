@@ -95,7 +95,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-slate-800 mb-4">
               Try Vera Now
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-lg text-slate-800">
               Upload your predicate device 510(k) document and analyze substantial equivalence
             </p>
           </div>

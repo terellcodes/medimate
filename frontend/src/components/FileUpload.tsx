@@ -135,7 +135,7 @@ export default function FileUpload({ onUploadSuccess, isUploaded = false }: File
             <p className="text-lg text-slate-700 mb-2">
               Drop your 510(K) PDF here or click to browse
             </p>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-700">
               PDF files only, up to 10MB
             </p>
           </div>
