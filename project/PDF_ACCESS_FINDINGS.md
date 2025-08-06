@@ -108,17 +108,23 @@ All attempts resulted in abuse detection blocking regardless of:
 
 ### Quick Start Commands
 
-After fixing the PDF URL pattern and User-Agent headers, the script now works successfully:
+Enhanced script now supports multiple PDF downloads and comprehensive device listing:
 
 ```bash
-# Basic usage - searches and downloads first available PDF
+# Basic usage - downloads first available PDF
 uv run python project/scripts/fetch_510k_pdf.py "insulin pump"
 
-# With verbose logging
-uv run python project/scripts/fetch_510k_pdf.py "catheter" --verbose
+# Download multiple PDFs (up to 3)
+uv run python project/scripts/fetch_510k_pdf.py "catheter" --max-downloads 3
 
-# Custom output directory
-uv run python project/scripts/fetch_510k_pdf.py "defibrillator" --output-dir ./my_pdfs
+# List all devices found (with download indicator)
+uv run python project/scripts/fetch_510k_pdf.py "insulin pump" --list-all
+
+# Download multiple PDFs and show all devices
+uv run python project/scripts/fetch_510k_pdf.py "defibrillator" -n 5 -l
+
+# With verbose logging and custom output directory
+uv run python project/scripts/fetch_510k_pdf.py "stent" -n 2 -l -v --output-dir ./my_pdfs
 
 # Help and options
 uv run python project/scripts/fetch_510k_pdf.py --help
@@ -143,12 +149,31 @@ uv run python project/scripts/fetch_510k_pdf.py "MRI"
 
 ### Expected Output
 
-Successful execution will:
-1. Search openFDA API for matching devices
-2. Filter for devices with "Summary" or "Statement" documents  
-3. Try multiple candidates until finding an accessible PDF
-4. Download PDF to `project/data/` directory
-5. Display device information and file path
+The enhanced script provides comprehensive results:
+
+**Search Summary:**
+- Total devices found
+- Devices with 510(k) documents available 
+- Download attempts and successes
+- Max downloads requested
+
+**Successful Downloads:**
+- Device name, K-Number, applicant, decision date
+- Local file path for each downloaded PDF
+
+**All Devices List** (with `--list-all` or when no PDFs downloaded):
+- Complete metadata for every device found
+- Clear indicator (✓/✗) for 510(k) document availability  
+- Document type (Summary/Statement) when available
+- Applicant and decision date information
+
+**Device Information Returned:**
+- Device name
+- Applicant/manufacturer
+- FDA decision date  
+- Whether 510(k) document exists
+- Document type (Summary/Statement)
+- K-number for reference
 
 ### Dependencies
 

@@ -7,6 +7,8 @@ and downloads the corresponding 510(k) PDF documents from FDA's database.
 
 Features:
 - Searches openFDA API for device matches
+- Downloads multiple PDFs (configurable limit)
+- Returns comprehensive metadata for all found devices
 - Filters for devices with available summary documents
 - Correctly handles FDA's year-based URL pattern
 - Downloads PDFs with proper user-agent headers
@@ -14,8 +16,9 @@ Features:
 
 Usage:
     python fetch_510k_pdf.py "search term"
-    python fetch_510k_pdf.py "catheter"
-    python fetch_510k_pdf.py "insulin pump"
+    python fetch_510k_pdf.py "catheter" --max-downloads 3
+    python fetch_510k_pdf.py "insulin pump" --list-all
+    python fetch_510k_pdf.py "defibrillator" -n 5 -l -v
 """
 
 import argparse
@@ -206,16 +209,21 @@ def download_pdf(pdf_url, device_info, output_dir):
     except Exception as e:
         return False, None, f"Unexpected error: {e}"
 
-def fetch_510k_pdf(search_term, output_dir=None):
+def fetch_510k_pdf(search_term, output_dir=None, max_downloads=1):
     """
-    Main function to search for a device and download its 510(k) PDF.
+    Main function to search for devices and download their 510(k) PDFs.
     
     Args:
         search_term (str): Search term for device name
         output_dir (str or Path, optional): Output directory for PDF
+        max_downloads (int): Maximum number of PDFs to download
     
     Returns:
-        tuple: (success: bool, filepath: str or None, device_info: dict or None)
+        dict: {
+            'downloads': [list of successful downloads],
+            'all_devices': [list of all devices found with metadata],
+            'summary': {download and search statistics}
+        }
     """
     if output_dir is None:
         output_dir = DATA_DIR
@@ -225,41 +233,89 @@ def fetch_510k_pdf(search_term, output_dir=None):
     # Step 1: Search for devices
     api_data = search_510k_devices(search_term)
     if not api_data or not api_data.get('results'):
-        return False, None, None
+        return {
+            'downloads': [],
+            'all_devices': [],
+            'summary': {
+                'total_found': 0, 
+                'devices_with_documents': 0,
+                'downloads_attempted': 0,
+                'downloads_successful': 0, 
+                'max_downloads_requested': max_downloads
+            }
+        }
     
-    # Step 2: Try multiple devices until we find one with an accessible PDF
-    logger.info(f"Found {len(api_data['results'])} devices, checking for accessible PDFs...")
+    # Initialize result containers
+    downloads = []
+    all_devices = []
+    downloads_attempted = 0
+    
+    # Step 2: Process all devices and collect metadata
+    logger.info(f"Found {len(api_data['results'])} devices, processing all...")
     
     for i, device in enumerate(api_data['results']):
         device_info = extract_device_info(device)
         if not device_info:
             continue
-            
-        # Check if device has a summary document (more likely to have PDF)
+        
+        # Determine if device has 510(k) document available
         statement_or_summary = device_info.get('statement_or_summary', '').strip()
-        logger.info(f"Device {i+1}: {device_info['device_name']} ({device_info['k_number']}) - Document type: '{statement_or_summary}'")
+        has_510k_document = bool(statement_or_summary and statement_or_summary.lower() in ['summary', 'statement'])
         
-        # Skip devices without summary documents
-        if not statement_or_summary or statement_or_summary.lower() not in ['summary', 'statement']:
-            logger.info(f"Skipping {device_info['k_number']} - no summary document indicated")
-            continue
+        # Create comprehensive device metadata
+        device_metadata = {
+            'device_name': device_info['device_name'],
+            'applicant': device_info['applicant'],
+            'decision_date': device_info['decision_date'],
+            'k_number': device_info['k_number'],
+            'has_510k_document': has_510k_document,
+            'document_type': statement_or_summary if statement_or_summary else None,
+            'decision_description': device_info.get('decision_description')
+        }
+        all_devices.append(device_metadata)
         
-        # Step 3: Construct PDF URL
-        pdf_url = construct_pdf_url(device_info['k_number'], device_info['year_digits'])
+        # Log device information
+        doc_status = f"Document: {statement_or_summary}" if statement_or_summary else "No document"
+        logger.info(f"Device {i+1}: {device_info['device_name']} ({device_info['k_number']}) - {doc_status}")
         
-        # Step 4: Try to download PDF
-        success, filepath, error_msg = download_pdf(pdf_url, device_info, output_dir)
-        
-        if success:
-            logger.info(f"✓ Successfully found and downloaded PDF for {device_info['k_number']}")
-            return True, filepath, device_info
-        else:
-            logger.warning(f"Failed to download PDF for {device_info['k_number']}: {error_msg}")
-            continue
+        # Try to download PDF if we haven't reached the limit and device has document
+        if len(downloads) < max_downloads and has_510k_document:
+            downloads_attempted += 1
+            
+            # Step 3: Construct PDF URL
+            pdf_url = construct_pdf_url(device_info['k_number'], device_info['year_digits'])
+            
+            # Step 4: Try to download PDF
+            success, filepath, error_msg = download_pdf(pdf_url, device_info, output_dir)
+            
+            if success:
+                download_info = {
+                    'device_name': device_info['device_name'],
+                    'k_number': device_info['k_number'],
+                    'applicant': device_info['applicant'],
+                    'decision_date': device_info['decision_date'],
+                    'filepath': filepath,
+                    'pdf_url': pdf_url
+                }
+                downloads.append(download_info)
+                logger.info(f"✓ Successfully downloaded PDF {len(downloads)}/{max_downloads}: {device_info['k_number']}")
+            else:
+                logger.warning(f"Failed to download PDF for {device_info['k_number']}: {error_msg}")
     
-    # If we get here, none of the devices had accessible PDFs
-    logger.error("No accessible PDFs found for any of the matching devices")
-    return False, None, None
+    # Create summary
+    summary = {
+        'total_found': len(all_devices),
+        'devices_with_documents': len([d for d in all_devices if d['has_510k_document']]),
+        'downloads_attempted': downloads_attempted,
+        'downloads_successful': len(downloads),
+        'max_downloads_requested': max_downloads
+    }
+    
+    return {
+        'downloads': downloads,
+        'all_devices': all_devices,
+        'summary': summary
+    }
 
 def main():
     """
@@ -288,6 +344,19 @@ Examples:
     )
     
     parser.add_argument(
+        '--max-downloads', '-n',
+        type=int,
+        default=1,
+        help='Maximum number of PDFs to download (default: 1)'
+    )
+    
+    parser.add_argument(
+        '--list-all', '-l',
+        action='store_true',
+        help='List all found devices even if no PDFs are downloaded'
+    )
+    
+    parser.add_argument(
         '--verbose', '-v',
         action='store_true',
         help='Enable verbose logging'
@@ -299,22 +368,50 @@ Examples:
         logging.getLogger().setLevel(logging.DEBUG)
     
     try:
-        success, filepath, device_info = fetch_510k_pdf(args.search_term, args.output_dir)
+        result = fetch_510k_pdf(args.search_term, args.output_dir, args.max_downloads)
         
-        if success:
-            print(f"\n✓ SUCCESS!")
-            print(f"Downloaded: {filepath}")
-            if device_info:
-                print(f"Device: {device_info['device_name']}")
-                print(f"K-Number: {device_info['k_number']}")
-                print(f"Applicant: {device_info['applicant']}")
+        # Display summary
+        summary = result['summary']
+        downloads = result['downloads']
+        all_devices = result['all_devices']
+        
+        print(f"\n📊 SEARCH RESULTS")
+        print(f"Search term: '{args.search_term}'")
+        print(f"Total devices found: {summary['total_found']}")
+        print(f"Devices with 510(k) documents: {summary['devices_with_documents']}")
+        print(f"Downloads attempted: {summary['downloads_attempted']}")
+        print(f"Downloads successful: {summary['downloads_successful']}")
+        
+        # Display successful downloads
+        if downloads:
+            print(f"\n✅ SUCCESSFUL DOWNLOADS ({len(downloads)}):")
+            for i, download in enumerate(downloads, 1):
+                print(f"  {i}. {download['device_name']}")
+                print(f"     K-Number: {download['k_number']}")
+                print(f"     Applicant: {download['applicant']}")
+                print(f"     Date: {download['decision_date']}")
+                print(f"     File: {download['filepath']}")
+                print()
+        
+        # Display all devices if requested or if verbose
+        if args.list_all or args.verbose or not downloads:
+            print(f"\n📋 ALL DEVICES FOUND ({len(all_devices)}):")
+            for i, device in enumerate(all_devices, 1):
+                doc_indicator = "✓" if device['has_510k_document'] else "✗"
+                doc_type = f" ({device['document_type']})" if device['document_type'] else ""
+                
+                print(f"  {i}. {doc_indicator} {device['device_name']}")
+                print(f"     K-Number: {device['k_number']}")
+                print(f"     Applicant: {device['applicant']}")
+                print(f"     Date: {device['decision_date']}")
+                print(f"     510(k) Document: {'Yes' if device['has_510k_document'] else 'No'}{doc_type}")
+                print()
+        
+        # Exit with appropriate status
+        if downloads:
             sys.exit(0)
         else:
-            print(f"\n✗ FAILED!")
-            if device_info:
-                print(f"Found device but couldn't download PDF: {device_info['device_name']} ({device_info['k_number']})")
-            else:
-                print(f"No devices found for search term: '{args.search_term}'")
+            print(f"✗ No PDFs were downloaded")
             sys.exit(1)
             
     except KeyboardInterrupt:
