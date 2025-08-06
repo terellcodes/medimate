@@ -104,6 +104,59 @@ All attempts resulted in abuse detection blocking regardless of:
 3. Build agent decision-making logic using available structured data
 4. Design user interface for manual document upload as fallback
 
+## Script Usage
+
+### Quick Start Commands
+
+After fixing the PDF URL pattern and User-Agent headers, the script now works successfully:
+
+```bash
+# Basic usage - searches and downloads first available PDF
+uv run python project/scripts/fetch_510k_pdf.py "insulin pump"
+
+# With verbose logging
+uv run python project/scripts/fetch_510k_pdf.py "catheter" --verbose
+
+# Custom output directory
+uv run python project/scripts/fetch_510k_pdf.py "defibrillator" --output-dir ./my_pdfs
+
+# Help and options
+uv run python project/scripts/fetch_510k_pdf.py --help
+```
+
+### Command Examples
+
+```bash
+# Search for cardiovascular devices
+uv run python project/scripts/fetch_510k_pdf.py "stent"
+uv run python project/scripts/fetch_510k_pdf.py "pacemaker"  
+uv run python project/scripts/fetch_510k_pdf.py "cardiac catheter"
+
+# Search for diabetes devices
+uv run python project/scripts/fetch_510k_pdf.py "insulin pump"
+uv run python project/scripts/fetch_510k_pdf.py "glucose monitor"
+
+# Search for imaging devices
+uv run python project/scripts/fetch_510k_pdf.py "ultrasound"
+uv run python project/scripts/fetch_510k_pdf.py "MRI"
+```
+
+### Expected Output
+
+Successful execution will:
+1. Search openFDA API for matching devices
+2. Filter for devices with "Summary" or "Statement" documents  
+3. Try multiple candidates until finding an accessible PDF
+4. Download PDF to `project/data/` directory
+5. Display device information and file path
+
+### Dependencies
+
+Ensure requests is installed:
+```bash
+uv add --dev requests
+```
+
 ## Conclusion
 
-While automated PDF access is currently blocked, the core foundation for the 510(k) agent system remains solid. The OpenFDA API provides rich metadata that can support most decision-making processes, and alternative document access strategies can fill the gaps. The project should proceed with agent development while implementing hybrid approaches for document analysis.
+With the corrected FDA PDF URL pattern and proper User-Agent headers, automated PDF retrieval now works reliably. The OpenFDA API provides rich metadata for device discovery, and the working PDF download capability enables full document analysis for the 510(k) agent system. The project can now proceed with both metadata-based and full document analysis approaches.
