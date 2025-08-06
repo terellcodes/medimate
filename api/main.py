@@ -8,6 +8,7 @@ from config.settings import get_settings, Settings
 from utils.constants import ResponseMessage, StatusCode
 from routes.upload import router as upload_router
 from routes.analysis import router as analysis_router
+from routes.predicate_discovery import router as predicate_discovery_router
 from services.pdf_service import pdf_service
 
 
@@ -89,6 +90,7 @@ def create_application() -> FastAPI:
     # Include routers
     app.include_router(upload_router)
     app.include_router(analysis_router)
+    app.include_router(predicate_discovery_router)
 
     return app
 
