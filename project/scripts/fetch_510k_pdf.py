@@ -54,26 +54,40 @@ def sanitize_filename(filename):
     filename = re.sub(r'\s+', '_', filename.strip())
     return filename[:100]  # Limit filename length
 
-def search_510k_devices(search_term, limit=10):
+def search_510k_devices(search_term=None, product_code=None, limit=10):
     """
-    Search the openFDA 510(k) database for devices matching the search term.
+    Search the openFDA 510(k) database for devices.
     
     Args:
-        search_term (str): Search term for device name
+        search_term (str, optional): Search term for device name
+        product_code (str, optional): FDA product code to filter by
         limit (int): Number of results to return
     
     Returns:
         dict: API response data
     """
     try:
-        # Construct search query
-        search_query = f'device_name:"{search_term}"'
+        # Construct search query based on parameters
+        if product_code and search_term:
+            # Combined search for most specific results
+            search_query = f'product_code:"{product_code}" AND device_name:"{search_term}"'
+            logger.info(f'Searching for devices with product code "{product_code}" and name matching "{search_term}"')
+        elif product_code:
+            # Product code only - category specific
+            search_query = f'product_code:"{product_code}"'
+            logger.info(f'Searching for devices with product code: "{product_code}"')
+        elif search_term:
+            # Device name only - broad search
+            search_query = f'device_name:"{search_term}"'
+            logger.info(f'Searching for devices matching: "{search_term}"')
+        else:
+            logger.error("Must provide either search_term or product_code")
+            return None
+        
         params = {
             'search': search_query,
             'limit': limit
         }
-        
-        logger.info(f'Searching for devices matching: "{search_term}"')
         response = requests.get(OPENFDA_510K_URL, params=params, timeout=10)
         response.raise_for_status()
         
@@ -130,7 +144,8 @@ def extract_device_info(device_data):
             'applicant': device_data.get('applicant', 'Unknown'),
             'decision_date': device_data.get('decision_date', 'Unknown'),
             'decision_description': device_data.get('decision_description', 'Unknown'),
-            'statement_or_summary': device_data.get('statement_or_summary', 'Unknown')
+            'statement_or_summary': device_data.get('statement_or_summary', 'Unknown'),
+            'product_code': device_data.get('product_code', 'Unknown')
         }
         
         logger.info(f"Device: {device_info['device_name']} ({k_number})")
@@ -209,12 +224,13 @@ def download_pdf(pdf_url, device_info, output_dir):
     except Exception as e:
         return False, None, f"Unexpected error: {e}"
 
-def fetch_510k_pdf(search_term, output_dir=None, max_downloads=1):
+def fetch_510k_pdf(search_term=None, product_code=None, output_dir=None, max_downloads=1):
     """
     Main function to search for devices and download their 510(k) PDFs.
     
     Args:
-        search_term (str): Search term for device name
+        search_term (str, optional): Search term for device name
+        product_code (str, optional): FDA product code to filter by
         output_dir (str or Path, optional): Output directory for PDF
         max_downloads (int): Maximum number of PDFs to download
     
@@ -231,7 +247,7 @@ def fetch_510k_pdf(search_term, output_dir=None, max_downloads=1):
         output_dir = Path(output_dir)
     
     # Step 1: Search for devices
-    api_data = search_510k_devices(search_term)
+    api_data = search_510k_devices(search_term=search_term, product_code=product_code)
     if not api_data or not api_data.get('results'):
         return {
             'downloads': [],
@@ -268,6 +284,7 @@ def fetch_510k_pdf(search_term, output_dir=None, max_downloads=1):
             'applicant': device_info['applicant'],
             'decision_date': device_info['decision_date'],
             'k_number': device_info['k_number'],
+            'product_code': device_info.get('product_code', 'Unknown'),
             'has_510k_document': has_510k_document,
             'document_type': statement_or_summary if statement_or_summary else None,
             'decision_description': device_info.get('decision_description')
@@ -334,7 +351,14 @@ Examples:
     
     parser.add_argument(
         'search_term',
+        nargs='?',  # Make optional since we can use product code instead
         help='Search term to find devices (e.g., "catheter", "cardiac filter")'
+    )
+    
+    parser.add_argument(
+        '--product-code', '-p',
+        type=str,
+        help='FDA product code to filter by (e.g., "DYB" for cardiac catheters)'
     )
     
     parser.add_argument(
@@ -364,11 +388,20 @@ Examples:
     
     args = parser.parse_args()
     
+    # Validate that at least one search parameter is provided
+    if not args.search_term and not args.product_code:
+        parser.error("Must provide either search_term or --product-code")
+    
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     
     try:
-        result = fetch_510k_pdf(args.search_term, args.output_dir, args.max_downloads)
+        result = fetch_510k_pdf(
+            search_term=args.search_term,
+            product_code=args.product_code,
+            output_dir=args.output_dir,
+            max_downloads=args.max_downloads
+        )
         
         # Display summary
         summary = result['summary']
