@@ -47,6 +47,8 @@ class PredicateDiscoveryResult(BaseModel):
     """Complete result of predicate discovery process."""
     downloads: List[DownloadedDevice]
     all_devices: List[DeviceInfo]
+    devices_with_510k: List[DeviceInfo]
+    devices_without_510k: List[DeviceInfo]
     summary: PredicateSearchSummary
     search_params: PredicateSearchParams
 

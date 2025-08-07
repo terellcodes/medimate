@@ -51,6 +51,8 @@ class PredicateDiscoveryService:
             return PredicateDiscoveryResult(
                 downloads=[],
                 all_devices=[],
+                devices_with_510k=[],
+                devices_without_510k=[],
                 summary=PredicateSearchSummary(
                     total_found=0,
                     devices_with_documents=0,
@@ -63,6 +65,8 @@ class PredicateDiscoveryService:
         
         # Step 2: Process all devices and collect metadata
         all_devices = []
+        devices_with_510k = []
+        devices_without_510k = []
         downloads = []
         downloads_attempted = 0
         
@@ -74,6 +78,12 @@ class PredicateDiscoveryService:
                 continue
             
             all_devices.append(device_info)
+            
+            # Separate into two lists
+            if device_info.has_510k_document:
+                devices_with_510k.append(device_info)
+            else:
+                devices_without_510k.append(device_info)
             
             # Try to download PDF if we haven't reached limit and device has document
             if (len(downloads) < search_params.max_downloads and 
@@ -88,10 +98,14 @@ class PredicateDiscoveryService:
                 else:
                     logger.warning(f"Failed to download PDF for {device_info.k_number}")
         
+        # Sort both lists by decision_date (most recent first)
+        devices_with_510k.sort(key=lambda x: self._parse_date(x.decision_date), reverse=True)
+        devices_without_510k.sort(key=lambda x: self._parse_date(x.decision_date), reverse=True)
+        
         # Create summary
         summary = PredicateSearchSummary(
             total_found=len(all_devices),
-            devices_with_documents=len([d for d in all_devices if d.has_510k_document]),
+            devices_with_documents=len(devices_with_510k),
             downloads_attempted=downloads_attempted,
             downloads_successful=len(downloads),
             max_downloads_requested=search_params.max_downloads
@@ -100,6 +114,8 @@ class PredicateDiscoveryService:
         return PredicateDiscoveryResult(
             downloads=downloads,
             all_devices=all_devices,
+            devices_with_510k=devices_with_510k,
+            devices_without_510k=devices_without_510k,
             summary=summary,
             search_params=search_params
         )
@@ -230,6 +246,14 @@ class PredicateDiscoveryService:
         # Remove extra whitespace and limit length
         filename = re.sub(r'\s+', '_', filename.strip())
         return filename[:100]  # Limit filename length
+
+    def _parse_date(self, date_str: str):
+        """Parse FDA date format safely for sorting."""
+        from datetime import datetime
+        try:
+            return datetime.strptime(date_str, '%Y-%m-%d')
+        except:
+            return datetime.min  # Put invalid dates at the end
 
 
 # Global service instance

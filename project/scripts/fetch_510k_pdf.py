@@ -238,6 +238,8 @@ def fetch_510k_pdf(search_term=None, product_code=None, output_dir=None, max_dow
         dict: {
             'downloads': [list of successful downloads],
             'all_devices': [list of all devices found with metadata],
+            'devices_with_510k': [list of devices with 510k documents, sorted by date],
+            'devices_without_510k': [list of devices without 510k documents, sorted by date],
             'summary': {download and search statistics}
         }
     """
@@ -264,6 +266,8 @@ def fetch_510k_pdf(search_term=None, product_code=None, output_dir=None, max_dow
     # Initialize result containers
     downloads = []
     all_devices = []
+    devices_with_510k = []
+    devices_without_510k = []
     downloads_attempted = 0
     
     # Step 2: Process all devices and collect metadata
@@ -290,6 +294,12 @@ def fetch_510k_pdf(search_term=None, product_code=None, output_dir=None, max_dow
             'decision_description': device_info.get('decision_description')
         }
         all_devices.append(device_metadata)
+        
+        # Separate into two lists
+        if has_510k_document:
+            devices_with_510k.append(device_metadata)
+        else:
+            devices_without_510k.append(device_metadata)
         
         # Log device information
         doc_status = f"Document: {statement_or_summary}" if statement_or_summary else "No document"
@@ -319,10 +329,24 @@ def fetch_510k_pdf(search_term=None, product_code=None, output_dir=None, max_dow
             else:
                 logger.warning(f"Failed to download PDF for {device_info['k_number']}: {error_msg}")
     
+    # Sort both lists by decision_date (most recent first)
+    from datetime import datetime
+    
+    def parse_date(date_str):
+        """Parse FDA date format safely"""
+        try:
+            return datetime.strptime(date_str, '%Y-%m-%d')
+        except:
+            return datetime.min  # Put invalid dates at the end
+    
+    devices_with_510k.sort(key=lambda x: parse_date(x['decision_date']), reverse=True)
+    devices_without_510k.sort(key=lambda x: parse_date(x['decision_date']), reverse=True)
+    
     # Create summary
     summary = {
         'total_found': len(all_devices),
-        'devices_with_documents': len([d for d in all_devices if d['has_510k_document']]),
+        'devices_with_documents': len(devices_with_510k),
+        'devices_without_documents': len(devices_without_510k),
         'downloads_attempted': downloads_attempted,
         'downloads_successful': len(downloads),
         'max_downloads_requested': max_downloads
@@ -330,7 +354,9 @@ def fetch_510k_pdf(search_term=None, product_code=None, output_dir=None, max_dow
     
     return {
         'downloads': downloads,
-        'all_devices': all_devices,
+        'all_devices': all_devices,  # Keep for backward compatibility
+        'devices_with_510k': devices_with_510k,
+        'devices_without_510k': devices_without_510k,
         'summary': summary
     }
 
