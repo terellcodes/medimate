@@ -302,7 +302,7 @@ class PredicateDiscoveryService:
             total_processed=len(k_numbers)
         )
 
-    async def _extract_single_ifu(self, k_number: str) -> IFUExtraction:
+    async def _extract_single_ifu(self, k_number: str, save_pdf: bool = True) -> IFUExtraction:
         """Extract IFU from a single device PDF."""
         try:
             # First, try to get device info from FDA API
@@ -332,6 +332,21 @@ class PredicateDiscoveryService:
                     pdf_url=pdf_url
                 )
             
+            # Save PDF to local storage if requested
+            pdf_save_success = True
+            if save_pdf:
+                try:
+                    pdf_filename = f"{k_number}.pdf"
+                    pdf_filepath = self.data_dir / pdf_filename
+                    
+                    with open(pdf_filepath, 'wb') as f:
+                        f.write(pdf_content)
+                    
+                    logger.info(f"Saved PDF for {k_number} to {pdf_filepath}")
+                except Exception as e:
+                    logger.error(f"Failed to save PDF for {k_number}: {e}")
+                    pdf_save_success = False
+            
             # Process PDF and extract IFU
             ifu_text = await self._extract_ifu_from_pdf_content(pdf_content)
             
@@ -340,15 +355,19 @@ class PredicateDiscoveryService:
                     k_number=k_number,
                     device_name=device_name,
                     extraction_status="no_ifu_found",
-                    error_message="IFU section not found in document",
+                    error_message="IFU section not found in document" + ("" if pdf_save_success else " (Note: PDF download succeeded but local save failed)"),
                     pdf_url=pdf_url
                 )
+            
+            # Success case - include PDF save status in error message if applicable
+            error_message = None if pdf_save_success else "PDF download succeeded but local save failed"
             
             return IFUExtraction(
                 k_number=k_number,
                 device_name=device_name,
                 ifu_text=ifu_text,
                 extraction_status="success",
+                error_message=error_message,
                 pdf_url=pdf_url
             )
             
@@ -519,6 +538,37 @@ Indication for Use:"""
         except Exception as e:
             logger.error(f"Failed to extract IFU from PDF content: {e}")
             return None
+
+    async def load_predicate_pdf_to_vector_store(self, k_number: str) -> bool:
+        """
+        Load a specific predicate device PDF into the vector store for analysis.
+        
+        Args:
+            k_number: The K-number of the predicate device
+            
+        Returns:
+            bool: True if successfully loaded, False otherwise
+        """
+        try:
+            # Check if PDF exists locally
+            pdf_filepath = self.data_dir / f"{k_number}.pdf"
+            if not pdf_filepath.exists():
+                logger.error(f"PDF file not found for {k_number} at {pdf_filepath}")
+                return False
+            
+            # Import vector store manager
+            from core.vector_store import vector_store_manager
+            
+            # Load the PDF into the predicate device vector store
+            # This will clear the existing predicate device collection and load the new one
+            summary = await vector_store_manager.load_predicate_device_document(str(pdf_filepath))
+            
+            logger.info(f"Successfully loaded {k_number} PDF into vector store")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to load {k_number} PDF into vector store: {e}")
+            return False
 
 
 # Global service instance

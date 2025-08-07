@@ -92,3 +92,16 @@ class BulkIFUResponse(BaseModel):
     success: bool
     result: Optional[BulkIFUResult] = None
     error: Optional[str] = None
+
+
+class PredicateEquivalenceRequest(BaseModel):
+    """Request for checking substantial equivalence against a specific predicate."""
+    device_intended_use: str
+    predicate_k_number: str
+
+
+class PredicateEquivalenceResponse(BaseModel):
+    """Response from predicate equivalence checking endpoint."""
+    success: bool
+    analysis: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None

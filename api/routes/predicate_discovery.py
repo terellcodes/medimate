@@ -4,7 +4,9 @@ from models.schemas.predicate_discovery import (
     PredicateDiscoveryResponse,
     PredicateSearchParams,
     BulkIFURequest,
-    BulkIFUResponse
+    BulkIFUResponse,
+    PredicateEquivalenceRequest,
+    PredicateEquivalenceResponse
 )
 from services.predicate_discovery_service import predicate_discovery_service
 import logging
@@ -135,4 +137,59 @@ async def fetch_bulk_ifu(request: BulkIFURequest):
         return BulkIFUResponse(
             success=False,
             error=f"Bulk IFU extraction failed: {str(e)}"
+        )
+
+
+@router.post("/check-predicate-equivalence", response_model=PredicateEquivalenceResponse)
+async def check_predicate_equivalence(request: PredicateEquivalenceRequest):
+    """
+    Check substantial equivalence against a specific predicate device.
+    
+    This endpoint:
+    1. Loads the specified predicate PDF into the vector store
+    2. Uses the existing analysis service to check substantial equivalence
+    3. Returns the analysis results
+    """
+    try:
+        if not request.device_intended_use.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Device intended use cannot be empty"
+            )
+        
+        if not request.predicate_k_number.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Predicate K-number cannot be empty"
+            )
+        
+        logger.info(f"Starting equivalence check for device against predicate {request.predicate_k_number}")
+        
+        # Step 1: Load predicate PDF into vector store
+        pdf_loaded = await predicate_discovery_service.load_predicate_pdf_to_vector_store(request.predicate_k_number)
+        
+        if not pdf_loaded:
+            return PredicateEquivalenceResponse(
+                success=False,
+                error=f"Failed to load predicate device PDF for {request.predicate_k_number}. Ensure the PDF was downloaded during IFU extraction."
+            )
+        
+        # Step 2: Run analysis using existing analysis service
+        from services.analysis_service import analysis_service
+        
+        result = await analysis_service.analyze_device_equivalence(request.device_intended_use)
+        
+        return PredicateEquivalenceResponse(
+            success=result["success"],
+            analysis=result.get("analysis"),
+            error=result.get("error")
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Predicate equivalence check failed: {e}")
+        return PredicateEquivalenceResponse(
+            success=False,
+            error=f"Equivalence check failed: {str(e)}"
         )

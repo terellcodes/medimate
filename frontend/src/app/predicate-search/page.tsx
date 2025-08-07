@@ -6,7 +6,7 @@ import PredicateHero from '@/components/predicate_search/PredicateHero';
 import PredicateFeatures from '@/components/predicate_search/PredicateFeatures';
 import SearchForm from '@/components/predicate_search/SearchForm';
 import SearchResults from '@/components/predicate_search/SearchResults';
-import { SearchParams, Device, DeviceInfo, IFUExtraction, BulkIFUResponse } from '@/types/predicate';
+import { SearchParams, Device, DeviceInfo, IFUExtraction, BulkIFUResponse, AnalysisResult, PredicateEquivalenceResponse } from '@/types/predicate';
 
 export default function PredicateSearchPage() {
   const [devicesWithPDF, setDevicesWithPDF] = useState<Device[]>([]);
@@ -25,6 +25,11 @@ export default function PredicateSearchPage() {
   const [isFetchingIFU, setIsFetchingIFU] = useState(false);
   const [ifuResults, setIfuResults] = useState<IFUExtraction[]>([]);
   const [showIfuResults, setShowIfuResults] = useState(false);
+  
+  // Substantial equivalence checking state
+  const [deviceIntendedUse, setDeviceIntendedUse] = useState('');
+  const [equivalenceResults, setEquivalenceResults] = useState<Map<string, AnalysisResult>>(new Map());
+  const [checkingEquivalence, setCheckingEquivalence] = useState<Set<string>>(new Set());
   
   const searchFormRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +139,53 @@ export default function PredicateSearchPage() {
       alert(`IFU fetch failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsFetchingIFU(false);
+    }
+  };
+
+  const handleCheckEquivalence = async (extraction: IFUExtraction) => {
+    if (!deviceIntendedUse.trim()) {
+      alert('Please enter your device\'s intended use first');
+      return;
+    }
+
+    // Add to checking set
+    setCheckingEquivalence(prev => new Set(prev).add(extraction.k_number));
+
+    try {
+      const response = await fetch('http://localhost:8000/api/check-predicate-equivalence', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          device_intended_use: deviceIntendedUse,
+          predicate_k_number: extraction.k_number
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Equivalence check failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as PredicateEquivalenceResponse;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Equivalence check failed');
+      }
+
+      if (data.analysis) {
+        setEquivalenceResults(prev => new Map(prev).set(extraction.k_number, data.analysis!));
+      }
+
+    } catch (err) {
+      alert(`Equivalence check failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      // Remove from checking set
+      setCheckingEquivalence(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(extraction.k_number);
+        return newSet;
+      });
     }
   };
 
@@ -310,6 +362,34 @@ export default function PredicateSearchPage() {
                   </span>
                 </div>
                 
+                {/* Device Intended Use Input */}
+                <div className="mb-8 p-6 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-purple-100 text-purple-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">
+                      ⚖️
+                    </div>
+                    <h4 className="text-lg font-semibold text-slate-800">
+                      Your Device&apos;s Intended Use
+                    </h4>
+                  </div>
+                  <div className="space-y-3">
+                    <label htmlFor="device-intended-use" className="block text-sm font-medium text-slate-700">
+                      Enter the intended use statement for your device to check substantial equivalence:
+                    </label>
+                    <textarea
+                      id="device-intended-use"
+                      value={deviceIntendedUse}
+                      onChange={(e) => setDeviceIntendedUse(e.target.value)}
+                      placeholder="Example: The XYZ Device is intended for use in measuring blood glucose levels in patients with diabetes for glucose monitoring to aid in diabetes management."
+                      className="w-full p-4 border border-slate-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-800 placeholder-slate-500"
+                      rows={4}
+                    />
+                    <p className="text-xs text-slate-600">
+                      💡 <span className="font-medium">Tip:</span> Provide a clear and specific description of what your device is intended to do, similar to how predicate devices describe their intended use.
+                    </p>
+                  </div>
+                </div>
+                
                 <div className="space-y-6">
                   {ifuResults.map((extraction, index: number) => (
                     <div key={extraction.k_number || index} className="border border-slate-200 rounded-lg p-6">
@@ -360,16 +440,96 @@ export default function PredicateSearchPage() {
                         </div>
                       )}
                       
-                      {extraction.pdf_url && (
-                        <div className="flex justify-end">
-                          <button
-                            onClick={() => window.open(extraction.pdf_url, '_blank')}
-                            className="text-sm text-blue-600 hover:text-blue-800 underline"
-                          >
-                            View Original PDF
-                          </button>
+                      {/* Equivalence Analysis Results */}
+                      {equivalenceResults.has(extraction.k_number) && (
+                        <div className="mt-4 p-4 border rounded-lg bg-purple-50 border-purple-200">
+                          <div className="flex items-center mb-3">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3 ${
+                              equivalenceResults.get(extraction.k_number)?.substantially_equivalent 
+                                ? 'bg-green-500' 
+                                : 'bg-red-500'
+                            }`}>
+                              {equivalenceResults.get(extraction.k_number)?.substantially_equivalent ? '✓' : '✗'}
+                            </div>
+                            <h5 className="font-semibold text-slate-800">
+                              {equivalenceResults.get(extraction.k_number)?.substantially_equivalent 
+                                ? 'Substantially Equivalent' 
+                                : 'Not Substantially Equivalent'}
+                            </h5>
+                          </div>
+                          
+                          {equivalenceResults.get(extraction.k_number)?.reasons && equivalenceResults.get(extraction.k_number)!.reasons.length > 0 && (
+                            <div className="mb-3">
+                              <p className="text-sm font-medium text-slate-700 mb-2">Analysis:</p>
+                              <ul className="list-disc list-inside space-y-1 text-sm text-slate-600">
+                                {equivalenceResults.get(extraction.k_number)!.reasons.map((reason, idx) => (
+                                  <li key={idx}>{reason}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {equivalenceResults.get(extraction.k_number)?.suggestions && equivalenceResults.get(extraction.k_number)!.suggestions.length > 0 && (
+                            <div className="mb-3">
+                              <p className="text-sm font-medium text-slate-700 mb-2">Recommendations:</p>
+                              <ul className="list-disc list-inside space-y-1 text-sm text-slate-600">
+                                {equivalenceResults.get(extraction.k_number)!.suggestions.map((suggestion, idx) => (
+                                  <li key={idx}>{suggestion}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          
+                          {equivalenceResults.get(extraction.k_number)?.citations && equivalenceResults.get(extraction.k_number)!.citations.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium text-slate-700 mb-2">FDA Guidelines References:</p>
+                              <div className="space-y-1 text-xs text-slate-500">
+                                {equivalenceResults.get(extraction.k_number)!.citations.map((citation, idx) => (
+                                  <div key={idx}>
+                                    <strong>{citation.tool}:</strong> {citation.text}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
+                      
+                      {/* Action Buttons */}
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                        <div className="flex items-center space-x-3">
+                          {extraction.pdf_url && (
+                            <button
+                              onClick={() => window.open(extraction.pdf_url, '_blank')}
+                              className="text-sm text-blue-600 hover:text-blue-800 underline"
+                            >
+                              View Original PDF
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* Check Substantial Equivalence Button */}
+                        {extraction.extraction_status === 'success' && extraction.ifu_text && (
+                          <button
+                            onClick={() => handleCheckEquivalence(extraction)}
+                            disabled={!deviceIntendedUse.trim() || checkingEquivalence.has(extraction.k_number)}
+                            className="bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-600 transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={!deviceIntendedUse.trim() ? 'Please enter your device\'s intended use above' : 'Check if this predicate device is substantially equivalent'}
+                          >
+                            {checkingEquivalence.has(extraction.k_number) ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Analyzing...
+                              </>
+                            ) : (
+                              <>
+                                <span className="mr-2">⚖️</span>
+                                Check for Substantial Equivalence
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

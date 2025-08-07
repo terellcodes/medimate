@@ -80,3 +80,26 @@ export interface BulkIFUResponse {
   result?: BulkIFUResult;
   error?: string;
 }
+
+export interface AnalysisResult {
+  substantially_equivalent: boolean;
+  reasons: string[];
+  citations: Citation[];
+  suggestions: string[];
+}
+
+export interface Citation {
+  tool: string;
+  text: string;
+}
+
+export interface PredicateEquivalenceRequest {
+  device_intended_use: string;
+  predicate_k_number: string;
+}
+
+export interface PredicateEquivalenceResponse {
+  success: boolean;
+  analysis?: AnalysisResult;
+  error?: string;
+}
