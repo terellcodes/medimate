@@ -63,3 +63,32 @@ class PredicateDiscoveryResponse(BaseModel):
     success: bool
     result: Optional[PredicateDiscoveryResult] = None
     error: Optional[str] = None
+
+
+class BulkIFURequest(BaseModel):
+    """Request for bulk IFU (Indications for Use) fetching."""
+    k_numbers: List[str]
+
+
+class IFUExtraction(BaseModel):
+    """Extracted IFU information from a device document."""
+    k_number: str
+    device_name: str
+    ifu_text: Optional[str] = None
+    extraction_status: str  # 'success', 'no_pdf', 'extraction_failed', 'no_ifu_found'
+    error_message: Optional[str] = None
+    pdf_url: Optional[str] = None
+
+
+class BulkIFUResult(BaseModel):
+    """Result of bulk IFU extraction process."""
+    extractions: List[IFUExtraction]
+    summary: Dict[str, int]  # Status counts: success, failed, no_pdf, etc.
+    total_processed: int
+
+
+class BulkIFUResponse(BaseModel):
+    """Response from bulk IFU extraction endpoint."""
+    success: bool
+    result: Optional[BulkIFUResult] = None
+    error: Optional[str] = None

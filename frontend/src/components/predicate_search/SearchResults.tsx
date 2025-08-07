@@ -13,6 +13,14 @@ interface SearchResultsProps {
     searchTerm?: string;
     productCode?: string;
   };
+  selectedDevices?: Set<string>;
+  isSelectAllWith510k?: boolean;
+  isSelectAllWithout510k?: boolean;
+  onDeviceToggle?: (kNumber: string) => void;
+  onSelectAll?: (section: 'with510k' | 'without510k') => void;
+  onClearSelection?: () => void;
+  onFetchIFU?: () => void;
+  isFetchingIFU?: boolean;
 }
 
 export default function SearchResults({ 
@@ -21,7 +29,15 @@ export default function SearchResults({
   isLoading, 
   error, 
   onDownload, 
-  searchParams 
+  searchParams,
+  selectedDevices = new Set(),
+  isSelectAllWith510k = false,
+  isSelectAllWithout510k = false,
+  onDeviceToggle,
+  onSelectAll,
+  onClearSelection,
+  onFetchIFU,
+  isFetchingIFU = false
 }: SearchResultsProps) {
   if (isLoading) {
     return (
@@ -87,9 +103,24 @@ export default function SearchResults({
             Search Results
           </h3>
         </div>
-        <span className="text-sm text-slate-800">
-          {totalDevices} device{totalDevices !== 1 ? 's' : ''} found
-        </span>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-slate-800">
+            {totalDevices} device{totalDevices !== 1 ? 's' : ''} found
+          </span>
+          {selectedDevices.size > 0 && (
+            <span className="text-sm text-green-600 font-medium">
+              {selectedDevices.size} selected
+            </span>
+          )}
+          {selectedDevices.size > 0 && onClearSelection && (
+            <button
+              onClick={onClearSelection}
+              className="text-sm text-slate-500 hover:text-slate-700 underline"
+            >
+              Clear selection
+            </button>
+          )}
+        </div>
       </div>
 
       {searchParams && (searchParams.searchTerm || searchParams.productCode) && (
@@ -113,16 +144,31 @@ export default function SearchResults({
       {/* Devices with 510(k) PDFs Section */}
       {devicesWithPDF.length > 0 && (
         <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <div className="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">
-              PDF
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">
+                PDF
+              </div>
+              <h4 className="text-xl font-semibold text-slate-800">
+                Devices with 510(k) Documents Available
+              </h4>
+              <span className="ml-2 text-sm text-slate-600">
+                ({devicesWithPDF.length})
+              </span>
             </div>
-            <h4 className="text-xl font-semibold text-slate-800">
-              Devices with 510(k) Documents Available
-            </h4>
-            <span className="ml-2 text-sm text-slate-600">
-              ({devicesWithPDF.length})
-            </span>
+            {onSelectAll && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isSelectAllWith510k}
+                  onChange={() => onSelectAll('with510k')}
+                  className="w-4 h-4 text-green-600 bg-white border-slate-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
+                />
+                <label className="text-sm text-slate-700 cursor-pointer" onClick={() => onSelectAll && onSelectAll('with510k')}>
+                  Select All
+                </label>
+              </div>
+            )}
           </div>
           <div className="space-y-4">
             {devicesWithPDF.map((device, index) => (
@@ -130,6 +176,9 @@ export default function SearchResults({
                 key={device.k_number || `with-${index}`}
                 device={device}
                 onDownload={onDownload}
+                isSelected={selectedDevices.has(device.k_number)}
+                onToggle={() => onDeviceToggle && onDeviceToggle(device.k_number)}
+                isSelectable={!!onDeviceToggle}
               />
             ))}
           </div>
@@ -144,16 +193,31 @@ export default function SearchResults({
       {/* Devices without 510(k) PDFs Section */}
       {devicesWithoutPDF.length > 0 && (
         <div className="mb-6 bg-slate-50 p-6 rounded-lg border border-slate-200">
-          <div className="flex items-center mb-4">
-            <div className="bg-slate-100 text-slate-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">
-              ⚬
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="bg-slate-100 text-slate-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">
+                ⚬
+              </div>
+              <h4 className="text-xl font-semibold text-slate-800">
+                Devices without 510(k) Documents
+              </h4>
+              <span className="ml-2 text-sm text-slate-600">
+                ({devicesWithoutPDF.length})
+              </span>
             </div>
-            <h4 className="text-xl font-semibold text-slate-800">
-              Devices without 510(k) Documents
-            </h4>
-            <span className="ml-2 text-sm text-slate-600">
-              ({devicesWithoutPDF.length})
-            </span>
+            {onSelectAll && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={isSelectAllWithout510k}
+                  onChange={() => onSelectAll('without510k')}
+                  className="w-4 h-4 text-green-600 bg-white border-slate-300 rounded focus:ring-green-500 focus:ring-2 mr-2"
+                />
+                <label className="text-sm text-slate-700 cursor-pointer" onClick={() => onSelectAll && onSelectAll('without510k')}>
+                  Select All
+                </label>
+              </div>
+            )}
           </div>
           <div className="space-y-4">
             {devicesWithoutPDF.map((device, index) => (
@@ -161,9 +225,35 @@ export default function SearchResults({
                 key={device.k_number || `without-${index}`}
                 device={device}
                 onDownload={onDownload}
+                isSelected={selectedDevices.has(device.k_number)}
+                onToggle={() => onDeviceToggle && onDeviceToggle(device.k_number)}
+                isSelectable={!!onDeviceToggle}
               />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Fetch IFU Button */}
+      {selectedDevices.size > 0 && onFetchIFU && (
+        <div className="mt-6 flex justify-center">
+          <button 
+            onClick={onFetchIFU}
+            disabled={isFetchingIFU}
+            className="bg-green-500 text-white px-6 py-3 rounded-lg text-base font-medium hover:bg-green-600 transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isFetchingIFU ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Processing {selectedDevices.size} devices...
+              </>
+            ) : (
+              <>
+                <span className="mr-2">📄</span>
+                Fetch IFU for Selected Devices ({selectedDevices.size})
+              </>
+            )}
+          </button>
         </div>
       )}
 

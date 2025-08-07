@@ -5,15 +5,44 @@ import { Device } from '@/types/predicate';
 interface DeviceCardProps {
   device: Device;
   onDownload: (device: Device) => void;
+  isSelected?: boolean;
+  onToggle?: () => void;
+  isSelectable?: boolean;
 }
 
-export default function DeviceCard({ device, onDownload }: DeviceCardProps) {
+export default function DeviceCard({ 
+  device, 
+  onDownload, 
+  isSelected = false, 
+  onToggle, 
+  isSelectable = true 
+}: DeviceCardProps) {
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString();
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-lg transition duration-200">
+    <div className={`bg-white border rounded-lg p-6 hover:shadow-lg transition duration-200 ${
+      isSelected 
+        ? 'border-green-300 bg-green-50' 
+        : 'border-slate-200'
+    } ${isSelectable ? 'cursor-pointer' : ''}`}>
+      {/* Selection checkbox */}
+      {isSelectable && onToggle && (
+        <div className="flex items-center mb-3">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onToggle}
+            className="w-4 h-4 text-green-600 bg-white border-slate-300 rounded focus:ring-green-500 focus:ring-2"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <label className="ml-2 text-sm text-slate-700 cursor-pointer" onClick={onToggle}>
+            {isSelected ? 'Selected for IFU extraction' : 'Select for IFU extraction'}
+          </label>
+        </div>
+      )}
+      
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-slate-800 mb-2">

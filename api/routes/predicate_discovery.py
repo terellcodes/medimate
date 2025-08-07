@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException
 from models.schemas.predicate_discovery import (
     PredicateDiscoveryRequest,
     PredicateDiscoveryResponse,
-    PredicateSearchParams
+    PredicateSearchParams,
+    BulkIFURequest,
+    BulkIFUResponse
 )
 from services.predicate_discovery_service import predicate_discovery_service
 import logging
@@ -92,4 +94,45 @@ async def search_devices_only(request: PredicateDiscoveryRequest):
         return PredicateDiscoveryResponse(
             success=False,
             error=f"Device search failed: {str(e)}"
+        )
+
+
+@router.post("/fetch-bulk-ifu", response_model=BulkIFUResponse)
+async def fetch_bulk_ifu(request: BulkIFURequest):
+    """
+    Fetch IFU (Indications for Use) text from multiple device PDFs.
+    
+    Downloads PDFs for the specified K-numbers and extracts the IFU sections
+    using AI-powered document parsing. Returns extracted IFU text for each device.
+    """
+    try:
+        if not request.k_numbers:
+            raise HTTPException(
+                status_code=400,
+                detail="Must provide at least one K-number"
+            )
+        
+        if len(request.k_numbers) > 50:  # Reasonable limit for bulk processing
+            raise HTTPException(
+                status_code=400,
+                detail="Too many devices requested. Maximum 50 devices per request."
+            )
+        
+        logger.info(f"Starting bulk IFU extraction for {len(request.k_numbers)} devices")
+        
+        # Execute bulk IFU extraction
+        result = await predicate_discovery_service.extract_bulk_ifu(request.k_numbers)
+        
+        return BulkIFUResponse(
+            success=True,
+            result=result
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Bulk IFU extraction failed: {e}")
+        return BulkIFUResponse(
+            success=False,
+            error=f"Bulk IFU extraction failed: {str(e)}"
         )

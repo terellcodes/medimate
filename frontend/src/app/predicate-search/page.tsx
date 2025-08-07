@@ -6,7 +6,7 @@ import PredicateHero from '@/components/predicate_search/PredicateHero';
 import PredicateFeatures from '@/components/predicate_search/PredicateFeatures';
 import SearchForm from '@/components/predicate_search/SearchForm';
 import SearchResults from '@/components/predicate_search/SearchResults';
-import { SearchParams, Device } from '@/types/predicate';
+import { SearchParams, Device, DeviceInfo, IFUExtraction, BulkIFUResponse } from '@/types/predicate';
 
 export default function PredicateSearchPage() {
   const [devicesWithPDF, setDevicesWithPDF] = useState<Device[]>([]);
@@ -15,6 +15,16 @@ export default function PredicateSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useState<SearchParams | undefined>();
   const [hasSearched, setHasSearched] = useState(false);
+  
+  // Selection state
+  const [selectedDevices, setSelectedDevices] = useState<Set<string>>(new Set());
+  const [isSelectAllWith510k, setIsSelectAllWith510k] = useState(false);
+  const [isSelectAllWithout510k, setIsSelectAllWithout510k] = useState(false);
+  
+  // IFU fetching state
+  const [isFetchingIFU, setIsFetchingIFU] = useState(false);
+  const [ifuResults, setIfuResults] = useState<IFUExtraction[]>([]);
+  const [showIfuResults, setShowIfuResults] = useState(false);
   
   const searchFormRef = useRef<HTMLDivElement>(null);
 
@@ -25,11 +35,116 @@ export default function PredicateSearchPage() {
     });
   };
 
+  // Selection handlers
+  const handleDeviceToggle = (kNumber: string) => {
+    const newSelected = new Set(selectedDevices);
+    if (newSelected.has(kNumber)) {
+      newSelected.delete(kNumber);
+    } else {
+      newSelected.add(kNumber);
+    }
+    setSelectedDevices(newSelected);
+    
+    // Update select all states
+    const selectedWith510k = devicesWithPDF.filter(d => newSelected.has(d.k_number));
+    const selectedWithout510k = devicesWithoutPDF.filter(d => newSelected.has(d.k_number));
+    
+    setIsSelectAllWith510k(selectedWith510k.length === devicesWithPDF.length && devicesWithPDF.length > 0);
+    setIsSelectAllWithout510k(selectedWithout510k.length === devicesWithoutPDF.length && devicesWithoutPDF.length > 0);
+  };
+
+  const handleSelectAll = (section: 'with510k' | 'without510k') => {
+    const newSelected = new Set(selectedDevices);
+    
+    if (section === 'with510k') {
+      if (isSelectAllWith510k) {
+        // Deselect all with 510k
+        devicesWithPDF.forEach(device => newSelected.delete(device.k_number));
+        setIsSelectAllWith510k(false);
+      } else {
+        // Select all with 510k
+        devicesWithPDF.forEach(device => newSelected.add(device.k_number));
+        setIsSelectAllWith510k(true);
+      }
+    } else {
+      if (isSelectAllWithout510k) {
+        // Deselect all without 510k
+        devicesWithoutPDF.forEach(device => newSelected.delete(device.k_number));
+        setIsSelectAllWithout510k(false);
+      } else {
+        // Select all without 510k
+        devicesWithoutPDF.forEach(device => newSelected.add(device.k_number));
+        setIsSelectAllWithout510k(true);
+      }
+    }
+    
+    setSelectedDevices(newSelected);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedDevices(new Set());
+    setIsSelectAllWith510k(false);
+    setIsSelectAllWithout510k(false);
+  };
+
+  const handleFetchIFU = async () => {
+    if (selectedDevices.size === 0) {
+      alert('Please select at least one device');
+      return;
+    }
+
+    setIsFetchingIFU(true);
+    setShowIfuResults(false);
+
+    try {
+      const kNumbers = Array.from(selectedDevices);
+      
+      const response = await fetch('http://localhost:8000/api/fetch-bulk-ifu', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          k_numbers: kNumbers
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`IFU fetch failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json() as BulkIFUResponse;
+
+      if (!data.success) {
+        throw new Error(data.error || 'IFU fetch failed');
+      }
+
+      setIfuResults(data.result?.extractions || []);
+      setShowIfuResults(true);
+      
+      // Scroll to results
+      setTimeout(() => {
+        const resultsElement = document.getElementById('ifu-results');
+        if (resultsElement) {
+          resultsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+
+    } catch (err) {
+      alert(`IFU fetch failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsFetchingIFU(false);
+    }
+  };
+
   const handleSearch = async (params: SearchParams) => {
     setIsLoading(true);
     setError(null);
     setSearchParams(params);
     setHasSearched(true);
+    
+    // Clear previous selections
+    handleClearSelection();
 
     try {
       const requestBody = {
@@ -60,14 +175,14 @@ export default function PredicateSearchPage() {
       }
 
       // Backend returns two separate lists, process them separately
-      const withPDF = (data.result?.devices_with_510k || []).map((deviceInfo: any) => ({
+      const withPDF = (data.result?.devices_with_510k || []).map((deviceInfo: DeviceInfo) => ({
         ...deviceInfo,
         pdf_available: deviceInfo.has_510k_document,
         clearance_type: deviceInfo.document_type || '510(k)',
         recall_status: deviceInfo.safety_status === 'recalled' ? 'recalled' : 'safe'
       }));
       
-      const withoutPDF = (data.result?.devices_without_510k || []).map((deviceInfo: any) => ({
+      const withoutPDF = (data.result?.devices_without_510k || []).map((deviceInfo: DeviceInfo) => ({
         ...deviceInfo,
         pdf_available: deviceInfo.has_510k_document,
         clearance_type: deviceInfo.document_type || '510(k)',
@@ -169,7 +284,103 @@ export default function PredicateSearchPage() {
                 error={error}
                 onDownload={handleDownload}
                 searchParams={searchParams}
+                selectedDevices={selectedDevices}
+                isSelectAllWith510k={isSelectAllWith510k}
+                isSelectAllWithout510k={isSelectAllWithout510k}
+                onDeviceToggle={handleDeviceToggle}
+                onSelectAll={handleSelectAll}
+                onClearSelection={handleClearSelection}
+                onFetchIFU={handleFetchIFU}
+                isFetchingIFU={isFetchingIFU}
               />
+            )}
+            
+            {/* IFU Results Section */}
+            {showIfuResults && (
+              <div id="ifu-results" className="mt-8 bg-white rounded-xl p-8 border border-slate-200 shadow-sm">
+                <div className="flex items-center mb-6">
+                  <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-3">
+                    📄
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-800">
+                    IFU Extraction Results
+                  </h3>
+                  <span className="ml-2 text-sm text-slate-600">
+                    ({ifuResults.length} processed)
+                  </span>
+                </div>
+                
+                <div className="space-y-6">
+                  {ifuResults.map((extraction, index: number) => (
+                    <div key={extraction.k_number || index} className="border border-slate-200 rounded-lg p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h4 className="text-lg font-semibold text-slate-800 mb-2">
+                            {extraction.device_name}
+                          </h4>
+                          <p className="text-sm text-slate-600 font-mono">
+                            K-Number: {extraction.k_number}
+                          </p>
+                        </div>
+                        <div className="flex items-center">
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                            extraction.extraction_status === 'success' 
+                              ? 'bg-green-100 text-green-800'
+                              : extraction.extraction_status === 'no_pdf'
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {extraction.extraction_status === 'success' && '✓ Success'}
+                            {extraction.extraction_status === 'no_pdf' && '⚠ No PDF'}
+                            {extraction.extraction_status === 'no_ifu_found' && '⚠ No IFU Found'}
+                            {extraction.extraction_status === 'extraction_failed' && '✗ Failed'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {extraction.extraction_status === 'success' && extraction.ifu_text && (
+                        <div className="mb-4 p-4 bg-slate-50 rounded-lg">
+                          <p className="text-xs text-slate-700 uppercase tracking-wide font-medium mb-2">
+                            Indication for Use
+                          </p>
+                          <p className="text-sm text-slate-800 leading-relaxed">
+                            {extraction.ifu_text}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {extraction.error_message && (
+                        <div className="mb-4 p-4 bg-red-50 rounded-lg">
+                          <p className="text-xs text-red-700 uppercase tracking-wide font-medium mb-2">
+                            Error Details
+                          </p>
+                          <p className="text-sm text-red-800">
+                            {extraction.error_message}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {extraction.pdf_url && (
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => window.open(extraction.pdf_url, '_blank')}
+                            className="text-sm text-blue-600 hover:text-blue-800 underline"
+                          >
+                            View Original PDF
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    💡 <span className="font-medium">Results Summary:</span> IFU extraction completed for {ifuResults.length} devices. 
+                    This AI-powered extraction identifies the &quot;Indications for Use&quot; sections from FDA 510(k) documents.
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>

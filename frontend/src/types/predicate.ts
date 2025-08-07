@@ -59,3 +59,24 @@ export interface PredicateDiscoveryResponse {
   result?: PredicateDiscoveryResult;
   error?: string;
 }
+
+export interface IFUExtraction {
+  k_number: string;
+  device_name: string;
+  ifu_text?: string;
+  extraction_status: 'success' | 'no_pdf' | 'extraction_failed' | 'no_ifu_found';
+  error_message?: string;
+  pdf_url?: string;
+}
+
+export interface BulkIFUResult {
+  extractions: IFUExtraction[];
+  summary: Record<string, number>;
+  total_processed: number;
+}
+
+export interface BulkIFUResponse {
+  success: boolean;
+  result?: BulkIFUResult;
+  error?: string;
+}

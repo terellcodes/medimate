@@ -8,7 +8,9 @@ from models.schemas.predicate_discovery import (
     DeviceInfo,
     DownloadedDevice,
     PredicateSearchSummary,
-    PredicateDiscoveryResult
+    PredicateDiscoveryResult,
+    BulkIFUResult,
+    IFUExtraction
 )
 
 logger = logging.getLogger(__name__)
@@ -254,6 +256,269 @@ class PredicateDiscoveryService:
             return datetime.strptime(date_str, '%Y-%m-%d')
         except:
             return datetime.min  # Put invalid dates at the end
+
+    async def extract_bulk_ifu(self, k_numbers: list[str]) -> BulkIFUResult:
+        """
+        Extract IFU (Indications for Use) from multiple device PDFs.
+        
+        Args:
+            k_numbers: List of K-numbers to process
+            
+        Returns:
+            BulkIFUResult with extracted IFU information for each device
+        """
+        logger.info(f"Starting bulk IFU extraction for {len(k_numbers)} devices")
+        
+        extractions = []
+        status_counts = {
+            'success': 0,
+            'no_pdf': 0,
+            'extraction_failed': 0,
+            'no_ifu_found': 0
+        }
+        
+        # Process each K-number
+        for k_number in k_numbers:
+            try:
+                extraction = await self._extract_single_ifu(k_number)
+                extractions.append(extraction)
+                status_counts[extraction.extraction_status] += 1
+                
+            except Exception as e:
+                logger.error(f"Failed to process K-number {k_number}: {e}")
+                extractions.append(IFUExtraction(
+                    k_number=k_number,
+                    device_name="Unknown",
+                    extraction_status="extraction_failed",
+                    error_message=str(e)
+                ))
+                status_counts['extraction_failed'] += 1
+        
+        logger.info(f"Bulk IFU extraction completed. Success: {status_counts['success']}, Failed: {sum(status_counts.values()) - status_counts['success']}")
+        
+        return BulkIFUResult(
+            extractions=extractions,
+            summary=status_counts,
+            total_processed=len(k_numbers)
+        )
+
+    async def _extract_single_ifu(self, k_number: str) -> IFUExtraction:
+        """Extract IFU from a single device PDF."""
+        try:
+            # First, try to get device info from FDA API
+            device_info = await self._get_device_info_by_k_number(k_number)
+            device_name = device_info.get('device_name', 'Unknown') if device_info else 'Unknown'
+            
+            # Try to download and process the PDF
+            year_digits = self._get_year_digits(k_number)
+            if not year_digits:
+                return IFUExtraction(
+                    k_number=k_number,
+                    device_name=device_name,
+                    extraction_status="no_pdf",
+                    error_message="Could not determine PDF URL pattern"
+                )
+            
+            pdf_url = f"{FDA_PDF_BASE_URL}/pdf{year_digits}/{k_number}.pdf"
+            
+            # Download PDF content
+            pdf_content = await self._download_pdf_content(pdf_url)
+            if not pdf_content:
+                return IFUExtraction(
+                    k_number=k_number,
+                    device_name=device_name,
+                    extraction_status="no_pdf",
+                    error_message="PDF not accessible or not found",
+                    pdf_url=pdf_url
+                )
+            
+            # Process PDF and extract IFU
+            ifu_text = await self._extract_ifu_from_pdf_content(pdf_content)
+            
+            if not ifu_text or ifu_text.strip() in ["Unknown", "Not specified", ""]:
+                return IFUExtraction(
+                    k_number=k_number,
+                    device_name=device_name,
+                    extraction_status="no_ifu_found",
+                    error_message="IFU section not found in document",
+                    pdf_url=pdf_url
+                )
+            
+            return IFUExtraction(
+                k_number=k_number,
+                device_name=device_name,
+                ifu_text=ifu_text,
+                extraction_status="success",
+                pdf_url=pdf_url
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to extract IFU for {k_number}: {e}")
+            return IFUExtraction(
+                k_number=k_number,
+                device_name="Unknown",
+                extraction_status="extraction_failed",
+                error_message=str(e)
+            )
+
+    async def _get_device_info_by_k_number(self, k_number: str) -> Optional[Dict]:
+        """Get device information from FDA API by K-number."""
+        try:
+            params = {
+                'search': f'k_number:"{k_number}"',
+                'limit': 1
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(OPENFDA_510K_URL, params=params, timeout=10) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        if data.get('results'):
+                            return data['results'][0]
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to get device info for {k_number}: {e}")
+            return None
+
+    async def _download_pdf_content(self, pdf_url: str) -> Optional[bytes]:
+        """Download PDF content from URL."""
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(pdf_url, headers=headers, timeout=30) as response:
+                    if response.status == 200:
+                        return await response.read()
+            return None
+            
+        except Exception as e:
+            logger.error(f"Failed to download PDF from {pdf_url}: {e}")
+            return None
+
+    async def _extract_ifu_from_pdf_content(self, pdf_content: bytes) -> Optional[str]:
+        """Extract IFU text from PDF content using AI-powered extraction."""
+        import tempfile
+        from langchain_community.document_loaders import PyPDFLoader
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+        from langchain_qdrant import QdrantVectorStore
+        from qdrant_client import QdrantClient
+        from qdrant_client.http.models import Distance, VectorParams
+        from langchain_openai.embeddings import OpenAIEmbeddings
+        from config.settings import get_settings
+        
+        try:
+            # Save PDF content to temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                temp_file.write(pdf_content)
+                temp_path = temp_file.name
+            
+            try:
+                # Load and process PDF
+                loader = PyPDFLoader(temp_path)
+                documents = loader.load()
+                
+                # Split into chunks
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+                chunks = text_splitter.split_documents(documents)
+                
+                # Create temporary vector store
+                temp_client = QdrantClient(":memory:")
+                collection_name = f"temp_ifu_{hash(pdf_content) % 10000}"
+                
+                temp_client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=VectorParams(size=1536, distance=Distance.COSINE)
+                )
+                
+                settings = get_settings()
+                embedding_model = OpenAIEmbeddings(
+                    model="text-embedding-3-small",
+                    openai_api_key=settings.OPENAI_API_KEY
+                )
+                
+                vector_store = QdrantVectorStore(
+                    client=temp_client,
+                    collection_name=collection_name,
+                    embedding=embedding_model
+                )
+                
+                # Add documents to vector store
+                await vector_store.aadd_documents(documents=chunks)
+                
+                # Create retriever and extract IFU
+                retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+                
+                # Use IFU-specific queries
+                ifu_queries = [
+                    "indication for use",
+                    "indications for use", 
+                    "intended use",
+                    "indication:",
+                    "indications:",
+                    "use:",
+                    "purpose"
+                ]
+                
+                # Search for IFU-related content
+                ifu_docs = []
+                for query in ifu_queries:
+                    docs = await retriever.ainvoke(query)
+                    ifu_docs.extend(docs)
+                
+                # Remove duplicates while preserving order
+                seen = set()
+                unique_docs = []
+                for doc in ifu_docs:
+                    if doc.page_content not in seen:
+                        seen.add(doc.page_content)
+                        unique_docs.append(doc)
+                
+                if not unique_docs:
+                    return None
+                
+                # Combine relevant content
+                combined_text = "\n\n".join([doc.page_content for doc in unique_docs[:3]])  # Use top 3 relevant chunks
+                
+                # Use AI to extract IFU from combined text
+                from langchain_openai import ChatOpenAI
+                
+                llm = ChatOpenAI(
+                    model="gpt-4o-mini",
+                    temperature=0,
+                    openai_api_key=settings.OPENAI_API_KEY
+                )
+                
+                prompt = f"""
+Extract the Indication for Use (IFU) or Intended Use statement from the following text. Look for:
+- Indications for Use
+- Intended Use
+- Purpose of the device
+- What the device is used for
+- Clinical indication
+
+Return the complete indication statement exactly as written in the document.
+If no clear indication is found, return "Not specified".
+
+Text:
+{combined_text}
+
+Indication for Use:"""
+
+                response = await llm.ainvoke(prompt)
+                return response.content.strip()
+                
+            finally:
+                # Clean up temp file
+                import os
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                    
+        except Exception as e:
+            logger.error(f"Failed to extract IFU from PDF content: {e}")
+            return None
 
 
 # Global service instance
