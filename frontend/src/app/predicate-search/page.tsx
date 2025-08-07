@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Header from '@/components/Header';
 import PredicateHero from '@/components/predicate_search/PredicateHero';
 import PredicateFeatures from '@/components/predicate_search/PredicateFeatures';
 import SearchForm from '@/components/predicate_search/SearchForm';
@@ -126,6 +127,7 @@ export default function PredicateSearchPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Header />
       <PredicateHero onTryNowClick={handleTryNowClick} />
       <PredicateFeatures />
       
