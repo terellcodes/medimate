@@ -4,7 +4,8 @@ import { Device } from '@/types/predicate';
 import DeviceCard from './DeviceCard';
 
 interface SearchResultsProps {
-  devices: Device[];
+  devicesWithPDF: Device[];
+  devicesWithoutPDF: Device[];
   isLoading: boolean;
   error: string | null;
   onDownload: (device: Device) => void;
@@ -15,7 +16,8 @@ interface SearchResultsProps {
 }
 
 export default function SearchResults({ 
-  devices, 
+  devicesWithPDF,
+  devicesWithoutPDF,
   isLoading, 
   error, 
   onDownload, 
@@ -47,7 +49,9 @@ export default function SearchResults({
     );
   }
 
-  if (devices.length === 0) {
+  const totalDevices = devicesWithPDF.length + devicesWithoutPDF.length;
+  
+  if (totalDevices === 0) {
     return (
       <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm">
         <div className="text-center py-12">
@@ -84,7 +88,7 @@ export default function SearchResults({
           </h3>
         </div>
         <span className="text-sm text-slate-800">
-          {devices.length} device{devices.length !== 1 ? 's' : ''} found
+          {totalDevices} device{totalDevices !== 1 ? 's' : ''} found
         </span>
       </div>
 
@@ -106,17 +110,64 @@ export default function SearchResults({
         </div>
       )}
 
-      <div className="space-y-4">
-        {devices.map((device, index) => (
-          <DeviceCard
-            key={device.k_number || index}
-            device={device}
-            onDownload={onDownload}
-          />
-        ))}
-      </div>
+      {/* Devices with 510(k) PDFs Section */}
+      {devicesWithPDF.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">
+              PDF
+            </div>
+            <h4 className="text-xl font-semibold text-slate-800">
+              Devices with 510(k) Documents Available
+            </h4>
+            <span className="ml-2 text-sm text-slate-600">
+              ({devicesWithPDF.length})
+            </span>
+          </div>
+          <div className="space-y-4">
+            {devicesWithPDF.map((device, index) => (
+              <DeviceCard
+                key={device.k_number || `with-${index}`}
+                device={device}
+                onDownload={onDownload}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
-      {devices.length > 0 && (
+      {/* Separator if both sections exist */}
+      {devicesWithPDF.length > 0 && devicesWithoutPDF.length > 0 && (
+        <div className="border-t border-slate-200 my-8"></div>
+      )}
+
+      {/* Devices without 510(k) PDFs Section */}
+      {devicesWithoutPDF.length > 0 && (
+        <div className="mb-6 bg-slate-50 p-6 rounded-lg border border-slate-200">
+          <div className="flex items-center mb-4">
+            <div className="bg-slate-100 text-slate-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">
+              ⚬
+            </div>
+            <h4 className="text-xl font-semibold text-slate-800">
+              Devices without 510(k) Documents
+            </h4>
+            <span className="ml-2 text-sm text-slate-600">
+              ({devicesWithoutPDF.length})
+            </span>
+          </div>
+          <div className="space-y-4">
+            {devicesWithoutPDF.map((device, index) => (
+              <DeviceCard
+                key={device.k_number || `without-${index}`}
+                device={device}
+                onDownload={onDownload}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {totalDevices > 0 && (
         <div className="mt-6 p-4 bg-green-50 rounded-lg">
           <p className="text-sm text-green-800">
             💡 <span className="font-medium">Tip:</span> Review device statements and classifications carefully. 

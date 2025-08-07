@@ -48,6 +48,8 @@ export interface PredicateSearchSummary {
 export interface PredicateDiscoveryResult {
   downloads: DownloadedDevice[];
   all_devices: DeviceInfo[];
+  devices_with_510k: DeviceInfo[];
+  devices_without_510k: DeviceInfo[];
   summary: PredicateSearchSummary;
   search_params: SearchParams;
 }

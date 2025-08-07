@@ -9,7 +9,8 @@ import SearchResults from '@/components/predicate_search/SearchResults';
 import { SearchParams, Device } from '@/types/predicate';
 
 export default function PredicateSearchPage() {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devicesWithPDF, setDevicesWithPDF] = useState<Device[]>([]);
+  const [devicesWithoutPDF, setDevicesWithoutPDF] = useState<Device[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useState<SearchParams | undefined>();
@@ -58,17 +59,28 @@ export default function PredicateSearchPage() {
         throw new Error(data.error || 'Search failed');
       }
 
-      // Backend returns devices in result.all_devices, map to component interface
-      const devices = (data.result?.all_devices || []).map((deviceInfo: any) => ({
+      // Backend returns two separate lists, process them separately
+      const withPDF = (data.result?.devices_with_510k || []).map((deviceInfo: any) => ({
         ...deviceInfo,
         pdf_available: deviceInfo.has_510k_document,
         clearance_type: deviceInfo.document_type || '510(k)',
         recall_status: deviceInfo.safety_status === 'recalled' ? 'recalled' : 'safe'
       }));
-      setDevices(devices);
+      
+      const withoutPDF = (data.result?.devices_without_510k || []).map((deviceInfo: any) => ({
+        ...deviceInfo,
+        pdf_available: deviceInfo.has_510k_document,
+        clearance_type: deviceInfo.document_type || '510(k)',
+        recall_status: deviceInfo.safety_status === 'recalled' ? 'recalled' : 'safe'
+      }));
+      
+      // Set separate state for each list
+      setDevicesWithPDF(withPDF);
+      setDevicesWithoutPDF(withoutPDF);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      setDevices([]);
+      setDevicesWithPDF([]);
+      setDevicesWithoutPDF([]);
     } finally {
       setIsLoading(false);
     }
@@ -151,7 +163,8 @@ export default function PredicateSearchPage() {
             
             {hasSearched && (
               <SearchResults
-                devices={devices}
+                devicesWithPDF={devicesWithPDF}
+                devicesWithoutPDF={devicesWithoutPDF}
                 isLoading={isLoading}
                 error={error}
                 onDownload={handleDownload}
