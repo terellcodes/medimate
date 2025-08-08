@@ -541,7 +541,7 @@ Indication for Use:"""
 
     async def load_predicate_pdf_to_vector_store(self, k_number: str) -> bool:
         """
-        Load a specific predicate device PDF into the vector store for analysis.
+        Load a specific predicate device PDF into its own vector store collection.
         
         Args:
             k_number: The K-number of the predicate device
@@ -550,20 +550,32 @@ Indication for Use:"""
             bool: True if successfully loaded, False otherwise
         """
         try:
+            # Import vector store manager
+            from core.vector_store import vector_store_manager
+            
+            # Check if collection already exists and has content
+            if vector_store_manager.predicate_collection_exists(k_number):
+                collection_info = vector_store_manager.client.get_collection(
+                    vector_store_manager.get_predicate_collection_name(k_number)
+                )
+                if collection_info.points_count > 0:
+                    logger.info(f"Collection for {k_number} already exists with {collection_info.points_count} points")
+                    return True
+            
             # Check if PDF exists locally
             pdf_filepath = self.data_dir / f"{k_number}.pdf"
             if not pdf_filepath.exists():
                 logger.error(f"PDF file not found for {k_number} at {pdf_filepath}")
                 return False
             
-            # Import vector store manager
-            from core.vector_store import vector_store_manager
+            # Load the PDF into its own collection
+            summary = await vector_store_manager.load_predicate_to_collection(k_number, str(pdf_filepath))
             
-            # Load the PDF into the predicate device vector store
-            # This will clear the existing predicate device collection and load the new one
-            summary = await vector_store_manager.load_predicate_device_document(str(pdf_filepath))
+            if summary.get("status") == "exists":
+                logger.info(f"Collection for {k_number} already existed")
+                return True
             
-            logger.info(f"Successfully loaded {k_number} PDF into vector store")
+            logger.info(f"Successfully loaded {k_number} PDF into dedicated collection with {summary.get('chunks_loaded', 0)} chunks")
             return True
             
         except Exception as e:

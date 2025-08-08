@@ -174,10 +174,18 @@ async def check_predicate_equivalence(request: PredicateEquivalenceRequest):
                 error=f"Failed to load predicate device PDF for {request.predicate_k_number}. Ensure the PDF was downloaded during IFU extraction."
             )
         
-        # Step 2: Run analysis using existing analysis service
-        from services.analysis_service import analysis_service
+        # Step 2: Set the current predicate context for the RAG service
+        from services.rag_service import rag_service
+        rag_service.set_current_predicate(request.predicate_k_number)
         
-        result = await analysis_service.analyze_device_equivalence(request.device_intended_use)
+        try:
+            # Step 3: Run analysis using existing analysis service
+            from services.analysis_service import analysis_service
+            
+            result = await analysis_service.analyze_device_equivalence(request.device_intended_use)
+        finally:
+            # Always clear the predicate context after analysis
+            rag_service.clear_current_predicate()
         
         return PredicateEquivalenceResponse(
             success=result["success"],
@@ -193,3 +201,85 @@ async def check_predicate_equivalence(request: PredicateEquivalenceRequest):
             success=False,
             error=f"Equivalence check failed: {str(e)}"
         )
+
+
+@router.get("/collections/list")
+async def list_predicate_collections():
+    """
+    List all predicate device collections in the vector store.
+    Useful for monitoring and debugging.
+    """
+    try:
+        from core.vector_store import vector_store_manager
+        
+        collections = vector_store_manager.list_predicate_collections()
+        
+        # Get collection details
+        collection_details = []
+        for k_number in collections:
+            collection_name = vector_store_manager.get_predicate_collection_name(k_number)
+            try:
+                info = vector_store_manager.client.get_collection(collection_name)
+                collection_details.append({
+                    "k_number": k_number,
+                    "collection_name": collection_name,
+                    "points_count": info.points_count,
+                    "status": "active"
+                })
+            except Exception as e:
+                collection_details.append({
+                    "k_number": k_number,
+                    "collection_name": collection_name,
+                    "points_count": 0,
+                    "status": "error",
+                    "error": str(e)
+                })
+        
+        return {
+            "success": True,
+            "total_collections": len(collection_details),
+            "collections": collection_details
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to list collections: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to list collections: {str(e)}"
+        }
+
+
+@router.delete("/collections/cleanup")
+async def cleanup_old_collections(keep_count: int = 20):
+    """
+    Clean up old predicate collections, keeping only the most recent ones.
+    
+    Args:
+        keep_count: Number of collections to keep (default: 20)
+    """
+    try:
+        from core.vector_store import vector_store_manager
+        
+        if keep_count < 5:
+            raise HTTPException(
+                status_code=400,
+                detail="keep_count must be at least 5"
+            )
+        
+        deleted = vector_store_manager.cleanup_old_collections(keep_count)
+        
+        return {
+            "success": True,
+            "deleted_count": len(deleted),
+            "deleted_collections": deleted,
+            "kept_count": keep_count
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Collection cleanup failed: {e}")
+        return {
+            "success": False,
+            "error": f"Collection cleanup failed: {str(e)}"
+        }

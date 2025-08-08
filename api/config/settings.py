@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     LANGCHAIN_TRACING_V2: str = "false"
     LANGCHAIN_PROJECT: str = "Vera"
     LANGSMITH_API_KEY: str = ""
+    
+    # Qdrant Configuration
+    QDRANT_MODE: str = "local"  # Options: "memory", "local", "docker", "cloud"
+    QDRANT_PATH: str = "./qdrant_storage"  # For local mode
+    QDRANT_HOST: str = "localhost"  # For docker mode
+    QDRANT_PORT: int = 6333  # For docker mode
+    QDRANT_URL: Optional[str] = None  # For cloud mode
+    QDRANT_API_KEY: Optional[str] = None  # For cloud mode
     
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [

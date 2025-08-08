@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 from langchain_core.tools import tool
 from langchain_core.vectorstores import VectorStoreRetriever
 from core.vector_store import vector_store_manager
@@ -9,6 +9,7 @@ class RAGService:
     
     def __init__(self):
         self.vector_manager = vector_store_manager
+        self.current_predicate_k_number: Optional[str] = None
     
     def get_guidelines_retriever(self) -> VectorStoreRetriever:
         """Get retriever for FDA guidelines."""
@@ -17,8 +18,22 @@ class RAGService:
     
     def get_predicate_device_retriever(self) -> VectorStoreRetriever:
         """Get retriever for predicate device documents."""
-        predicate_store = self.vector_manager.get_predicate_device_vector_store()
+        if self.current_predicate_k_number:
+            # Use specific predicate collection
+            predicate_store = self.vector_manager.get_predicate_vector_store(self.current_predicate_k_number)
+        else:
+            # Fallback to legacy collection
+            predicate_store = self.vector_manager.get_predicate_device_vector_store()
+        
         return predicate_store.as_retriever(search_kwargs={"k": 5})
+    
+    def set_current_predicate(self, k_number: str) -> None:
+        """Set the current predicate device for analysis."""
+        self.current_predicate_k_number = k_number
+    
+    def clear_current_predicate(self) -> None:
+        """Clear the current predicate device context."""
+        self.current_predicate_k_number = None
 
 
 # Initialize service
