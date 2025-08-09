@@ -5,12 +5,16 @@ from mangum import Mangum
 import os
 
 from config.settings import get_settings, Settings
+from config.logging_settings import configure_logging
 from utils.constants import ResponseMessage, StatusCode
 from routes.upload import router as upload_router
 from routes.analysis import router as analysis_router
 from routes.predicate_discovery import router as predicate_discovery_router
 from services.pdf_service import pdf_service
 from services.storage_service import initialize_storage_service
+
+
+configure_logging()
 
 
 def configure_langsmith():
