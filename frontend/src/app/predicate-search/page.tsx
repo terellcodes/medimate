@@ -7,6 +7,7 @@ import PredicateFeatures from '@/components/predicate_search/PredicateFeatures';
 import SearchForm from '@/components/predicate_search/SearchForm';
 import SearchResults from '@/components/predicate_search/SearchResults';
 import { SearchParams, Device, DeviceInfo, IFUExtraction, BulkIFUResponse, AnalysisResult, PredicateEquivalenceResponse } from '@/types/predicate';
+import { API_ENDPOINTS } from '../../config/api';
 
 export default function PredicateSearchPage() {
   const [devicesWithPDF, setDevicesWithPDF] = useState<Device[]>([]);
@@ -104,7 +105,7 @@ export default function PredicateSearchPage() {
     try {
       const kNumbers = Array.from(selectedDevices);
       
-      const response = await fetch('http://localhost:8000/api/fetch-bulk-ifu', {
+      const response = await fetch(API_ENDPOINTS.FETCH_BULK_IFU, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +153,7 @@ export default function PredicateSearchPage() {
     setCheckingEquivalence(prev => new Set(prev).add(extraction.k_number));
 
     try {
-      const response = await fetch('http://localhost:8000/api/check-predicate-equivalence', {
+      const response = await fetch(API_ENDPOINTS.CHECK_PREDICATE_EQUIVALENCE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -208,7 +209,7 @@ export default function PredicateSearchPage() {
         }
       };
 
-      const response = await fetch('http://localhost:8000/api/search-devices', {
+      const response = await fetch(API_ENDPOINTS.SEARCH_DEVICES, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -261,7 +262,7 @@ export default function PredicateSearchPage() {
 
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:8000/api/discover-predicates', {
+      const response = await fetch(API_ENDPOINTS.DISCOVER_PREDICATES, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

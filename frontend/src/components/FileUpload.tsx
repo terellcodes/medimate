@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 interface DocumentSummary {
   device_name: string;
@@ -37,7 +38,7 @@ export default function FileUpload({ onUploadSuccess, isUploaded = false }: File
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8000/api/upload_pdf', {
+      const response = await fetch(API_ENDPOINTS.UPLOAD_PDF, {
         method: 'POST',
         body: formData,
       });

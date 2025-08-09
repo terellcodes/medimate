@@ -8,6 +8,7 @@ import FileUpload from '@/components/FileUpload';
 import DocumentSummary from '@/components/DocumentSummary';
 import IndicationInput from '@/components/IndicationInput';
 import AnalysisResults from '@/components/AnalysisResults';
+import { API_ENDPOINTS } from '../config/api';
 
 interface DocumentSummary {
   device_name: string;
@@ -49,7 +50,7 @@ export default function Home() {
     setAnalysisResult(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/analyze_device', {
+      const response = await fetch(API_ENDPOINTS.ANALYZE_DEVICE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

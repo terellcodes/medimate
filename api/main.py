@@ -88,7 +88,7 @@ def create_application() -> FastAPI:
         description=settings.APP_DESCRIPTION,
         version=settings.APP_VERSION,
         lifespan=lifespan,
-        root_path="/api" if not settings.DEBUG else ""  # Add root_path for production
+        root_path=""  # Vercel handles routing
     )
 
     # Configure CORS
