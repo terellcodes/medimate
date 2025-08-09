@@ -21,9 +21,9 @@ const getApiBaseUrl = () => {
     if (process.env.NODE_ENV === 'development') {
       return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     }
-    // In production, use Fly.io API endpoint or environment variable
+    // In production, use Render API endpoint or environment variable
     // Check if window exists (client-side only)
-    return process.env.NEXT_PUBLIC_API_URL || 'https://veramate-api.fly.dev';
+    return process.env.NEXT_PUBLIC_API_URL || 'https://veramate-api.onrender.com';
   };
 
 export const API_BASE_URL = getApiBaseUrl();

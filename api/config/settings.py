@@ -43,6 +43,7 @@ class Settings(BaseSettings):
         "https://veramate.vercel.app",  # Production frontend on Vercel
         "https://veramate-*.vercel.app", # Vercel preview deployments
         "https://*.vercel.app",  # Any Vercel app (be more specific in production)
+        "https://*.onrender.com",  # Render domains (remove in production)
     ]
     ALLOWED_METHODS: List[str] = ["*"]
     ALLOWED_HEADERS: List[str] = ["*"]

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: veramate-api
+    runtime: python3
+    buildCommand: "cd api && pip install -r requirements.txt"
+    startCommand: "cd api && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src/api
+      - key: QDRANT_MODE
+        value: cloud
+      - key: ENVIRONMENT
+        value: production
+    # Add your secrets in Render dashboard:
+    # OPENAI_API_KEY, LANGCHAIN_API_KEY, QDRANT_URL, QDRANT_API_KEY
+    # R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME

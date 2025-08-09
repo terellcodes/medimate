@@ -131,5 +131,11 @@ async def get_api_info(settings: Settings = Depends(get_settings)):
         "debug_mode": settings.DEBUG
     }
 
-# Handler for Vercel serverless
+# Handler for Vercel serverless  
 handler = Mangum(app)
+
+# For running directly (Render, local development)
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
