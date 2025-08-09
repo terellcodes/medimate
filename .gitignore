@@ -59,3 +59,9 @@ project/STEP_0_MISSING_REQUIREMENTS.md
 
 # Qdrant local storage (use cloud in production)
 api/qdrant_storage/
+
+# Sensitive project documentation
+project/openFDA.md
+project/CLAUDE.md
+project/PDF_ACCESS_FINDINGS.md
+project/RECALL_SAFETY_PLAN.md
