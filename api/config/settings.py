@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     QDRANT_URL: Optional[str] = None  # For cloud mode
     QDRANT_API_KEY: Optional[str] = None  # For cloud mode
     
+    # Cloudflare R2 Storage Configuration
+    R2_ACCOUNT_ID: Optional[str] = None
+    R2_ACCESS_KEY_ID: Optional[str] = None
+    R2_SECRET_ACCESS_KEY: Optional[str] = None
+    R2_BUCKET_NAME: str = "510k-pdfs"
+    R2_PUBLIC_URL_BASE: Optional[str] = None  # Optional custom domain for R2 bucket
+    
     # CORS Settings
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",  # Local frontend

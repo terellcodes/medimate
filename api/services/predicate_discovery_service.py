@@ -3,6 +3,7 @@ import re
 import aiohttp
 from pathlib import Path
 from typing import Optional, Dict
+from services.storage_service import get_storage_service
 from models.schemas.predicate_discovery import (
     PredicateSearchParams,
     DeviceInfo,
@@ -25,14 +26,27 @@ class PredicateDiscoveryService:
     
     def __init__(self, data_dir: Optional[Path] = None):
         """Initialize the service with optional data directory."""
+        # Storage service will be lazy-loaded when needed
+        self._storage_service = None
+        
+        # Keep data_dir for backward compatibility
         if data_dir is None:
-            # Default to project data directory
             self.data_dir = Path(__file__).parent.parent.parent / "project" / "data"
         else:
             self.data_dir = Path(data_dir)
-        
-        # Ensure data directory exists
-        self.data_dir.mkdir(parents=True, exist_ok=True)
+    
+    @property
+    def storage_service(self):
+        """Lazy-load storage service."""
+        if self._storage_service is None:
+            self._storage_service = get_storage_service()
+            if self._storage_service:
+                logger.info("🌥️  R2 storage service loaded successfully")
+            else:
+                logger.info("📁 Using local storage (R2 not configured)")
+                # Ensure local directory exists
+                self.data_dir.mkdir(parents=True, exist_ok=True)
+        return self._storage_service
 
     async def discover_predicates(self, search_params: PredicateSearchParams) -> PredicateDiscoveryResult:
         """
@@ -332,20 +346,45 @@ class PredicateDiscoveryService:
                     pdf_url=pdf_url
                 )
             
-            # Save PDF to local storage if requested
+            # Save PDF to storage if requested
             pdf_save_success = True
+            storage_url = None
             if save_pdf:
-                try:
-                    pdf_filename = f"{k_number}.pdf"
-                    pdf_filepath = self.data_dir / pdf_filename
-                    
-                    with open(pdf_filepath, 'wb') as f:
-                        f.write(pdf_content)
-                    
-                    logger.info(f"Saved PDF for {k_number} to {pdf_filepath}")
-                except Exception as e:
-                    logger.error(f"Failed to save PDF for {k_number}: {e}")
-                    pdf_save_success = False
+                if self.storage_service:
+                    # Use R2 storage
+                    logger.info(f"🌐 Using R2 cloud storage for {k_number} (size: {len(pdf_content)} bytes)")
+                    try:
+                        result = await self.storage_service.upload_pdf(
+                            k_number=k_number,
+                            pdf_content=pdf_content,
+                            metadata={'device_name': device_name, 'fda_pdf_url': pdf_url}
+                        )
+                        if result['success']:
+                            storage_url = result['url']
+                            logger.info(f"✅ Successfully saved PDF for {k_number} to R2")
+                            logger.info(f"   📍 Storage URL: {storage_url}")
+                            logger.info(f"   📦 Bucket: {result['bucket']}")
+                            logger.info(f"   🔑 Key: {result['key']}")
+                        else:
+                            logger.error(f"❌ Failed to save PDF to R2: {result.get('error')}")
+                            pdf_save_success = False
+                    except Exception as e:
+                        logger.error(f"❌ Exception saving PDF for {k_number} to R2: {e}")
+                        pdf_save_success = False
+                else:
+                    # Fallback to local storage
+                    logger.warning(f"⚠️  R2 storage not configured, using local storage for {k_number}")
+                    try:
+                        pdf_filename = f"{k_number}.pdf"
+                        pdf_filepath = self.data_dir / pdf_filename
+                        
+                        with open(pdf_filepath, 'wb') as f:
+                            f.write(pdf_content)
+                        
+                        logger.info(f"💾 Saved PDF for {k_number} to local storage: {pdf_filepath}")
+                    except Exception as e:
+                        logger.error(f"❌ Failed to save PDF for {k_number} locally: {e}")
+                        pdf_save_success = False
             
             # Process PDF and extract IFU
             ifu_text = await self._extract_ifu_from_pdf_content(pdf_content)
@@ -355,12 +394,12 @@ class PredicateDiscoveryService:
                     k_number=k_number,
                     device_name=device_name,
                     extraction_status="no_ifu_found",
-                    error_message="IFU section not found in document" + ("" if pdf_save_success else " (Note: PDF download succeeded but local save failed)"),
+                    error_message="IFU section not found in document" + ("" if pdf_save_success else " (Note: PDF download succeeded but storage save failed)"),
                     pdf_url=pdf_url
                 )
             
             # Success case - include PDF save status in error message if applicable
-            error_message = None if pdf_save_success else "PDF download succeeded but local save failed"
+            error_message = None if pdf_save_success else "PDF download succeeded but storage save failed"
             
             return IFUExtraction(
                 k_number=k_number,
@@ -368,7 +407,7 @@ class PredicateDiscoveryService:
                 ifu_text=ifu_text,
                 extraction_status="success",
                 error_message=error_message,
-                pdf_url=pdf_url
+                pdf_url=storage_url or pdf_url  # Use storage URL if available, else FDA URL
             )
             
         except Exception as e:
@@ -562,14 +601,39 @@ Indication for Use:"""
                     logger.info(f"Collection for {k_number} already exists with {collection_info.points_count} points")
                     return True
             
-            # Check if PDF exists locally
-            pdf_filepath = self.data_dir / f"{k_number}.pdf"
-            if not pdf_filepath.exists():
-                logger.error(f"PDF file not found for {k_number} at {pdf_filepath}")
-                return False
+            # Try to load PDF from R2 first, then fall back to local
+            pdf_filepath = None
+            
+            # Check R2 storage first
+            if self.storage_service:
+                logger.info(f"🔍 Checking R2 storage for {k_number}...")
+                if await self.storage_service.pdf_exists(k_number):
+                    logger.info(f"✅ Found {k_number} in R2 storage, will load from cloud")
+                    # load_predicate_to_collection will handle R2 retrieval
+                    pdf_filepath = None
+                else:
+                    logger.info(f"⚠️  {k_number} not found in R2, checking local storage...")
+                    # Fall back to local storage
+                    local_path = self.data_dir / f"{k_number}.pdf"
+                    if local_path.exists():
+                        logger.info(f"✅ Found {k_number} in local storage at {local_path}")
+                        pdf_filepath = str(local_path)
+                    else:
+                        logger.error(f"❌ PDF not found for {k_number} in R2 or local storage")
+                        return False
+            else:
+                logger.warning(f"⚠️  R2 storage not configured, checking local storage only...")
+                # Fall back to local storage
+                local_path = self.data_dir / f"{k_number}.pdf"
+                if local_path.exists():
+                    logger.info(f"✅ Found {k_number} in local storage at {local_path}")
+                    pdf_filepath = str(local_path)
+                else:
+                    logger.error(f"❌ PDF not found for {k_number} in local storage")
+                    return False
             
             # Load the PDF into its own collection
-            summary = await vector_store_manager.load_predicate_to_collection(k_number, str(pdf_filepath))
+            summary = await vector_store_manager.load_predicate_to_collection(k_number, pdf_filepath)
             
             if summary.get("status") == "exists":
                 logger.info(f"Collection for {k_number} already existed")

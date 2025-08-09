@@ -10,6 +10,7 @@ from routes.upload import router as upload_router
 from routes.analysis import router as analysis_router
 from routes.predicate_discovery import router as predicate_discovery_router
 from services.pdf_service import pdf_service
+from services.storage_service import initialize_storage_service
 
 
 def configure_langsmith():
@@ -41,6 +42,14 @@ async def lifespan(app: FastAPI):
     
     # Configure LangSmith tracing
     configure_langsmith()
+    
+    # Initialize R2 storage service
+    settings = get_settings()
+    storage_service = initialize_storage_service(settings)
+    if storage_service:
+        print("📦 R2 storage service initialized")
+    else:
+        print("⚠️  R2 storage not configured - using local storage")
     
     # Initialize FDA guidelines on startup
     guidelines_path = os.path.join(os.path.dirname(__file__), "../notebooks/data/510K - Evaluating Substantial Equivalence.pdf")

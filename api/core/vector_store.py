@@ -11,7 +11,10 @@ import asyncio
 import logging
 from datetime import datetime
 from pathlib import Path
+import tempfile
+from typing import Union
 from config.settings import get_settings
+from services.storage_service import get_storage_service
 
 logger = logging.getLogger(__name__)
 
@@ -234,13 +237,71 @@ class VectorStoreManager:
         summary = await self._extract_document_summary_ai(predicate_store)
         return summary
     
-    async def load_predicate_to_collection(self, k_number: str, pdf_path: str) -> dict:
+    async def load_pdf_from_source(self, source: Union[str, bytes]) -> list:
+        """
+        Load PDF from either a file path, bytes, or R2 storage.
+        
+        Args:
+            source: Either a file path (str), PDF bytes, or K-number for R2 lookup
+            
+        Returns:
+            List of loaded documents
+        """
+        if isinstance(source, bytes):
+            # Handle bytes directly
+            logger.info(f"Loading PDF from bytes (size: {len(source)} bytes)")
+            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp_file:
+                tmp_file.write(source)
+                tmp_path = tmp_file.name
+            
+            try:
+                loader = PyPDFLoader(tmp_path)
+                documents = loader.load()
+                logger.info(f"Successfully loaded {len(documents)} pages from PDF bytes")
+            finally:
+                os.unlink(tmp_path)
+            
+            return documents
+        
+        elif isinstance(source, str):
+            # Check if it's a file path or K-number
+            if os.path.exists(source):
+                # It's a file path
+                logger.info(f"Loading PDF from local file path: {source}")
+                loader = PyPDFLoader(source)
+                documents = loader.load()
+                logger.info(f"Successfully loaded {len(documents)} pages from local file")
+                return documents
+            else:
+                # Try to get from R2 storage using K-number
+                logger.info(f"Attempting to load PDF from R2 storage for K-number: {source}")
+                storage_service = get_storage_service()
+                if storage_service:
+                    logger.debug(f"R2 storage service available, fetching PDF for {source}")
+                    pdf_bytes = await storage_service.get_pdf_bytes(source)
+                    if pdf_bytes:
+                        logger.info(f"Successfully retrieved PDF from R2 for {source} (size: {len(pdf_bytes)} bytes)")
+                        return await self.load_pdf_from_source(pdf_bytes)
+                    else:
+                        logger.warning(f"PDF not found in R2 storage for {source}")
+                else:
+                    logger.warning(f"R2 storage service not available, cannot retrieve {source}")
+                
+                # If not in R2 and not a valid path, raise error
+                logger.error(f"PDF not found in any storage location for: {source}")
+                raise FileNotFoundError(f"PDF not found: {source}")
+        
+        else:
+            logger.error(f"Invalid source type provided: {type(source)}")
+            raise ValueError(f"Invalid source type: {type(source)}")
+    
+    async def load_predicate_to_collection(self, k_number: str, pdf_path: str = None) -> dict:
         """
         Load a predicate device PDF into its own collection.
         
         Args:
             k_number: The K-number of the predicate device
-            pdf_path: Path to the PDF file
+            pdf_path: Optional path to the PDF file (if not provided, will try R2)
             
         Returns:
             Dictionary with extraction summary
@@ -256,9 +317,14 @@ class VectorStoreManager:
                     "points_count": collection_info.points_count
                 }
         
-        # Load PDF
-        loader = PyPDFLoader(pdf_path)
-        documents = loader.load()
+        # Load PDF from path, R2, or local storage
+        if pdf_path:
+            logger.info(f"Loading PDF for {k_number} from provided path: {pdf_path}")
+            documents = await self.load_pdf_from_source(pdf_path)
+        else:
+            logger.info(f"No path provided for {k_number}, attempting to load from R2/cloud storage")
+            # Try R2 first, then fall back to local
+            documents = await self.load_pdf_from_source(k_number)
         
         # Split documents into chunks
         chunks = self.text_splitter.split_documents(documents)
