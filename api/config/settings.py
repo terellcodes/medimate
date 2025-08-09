@@ -40,8 +40,9 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",  # Local frontend
         "http://127.0.0.1:3000",
-        "https://veramate.vercel.app",  # Production frontend
+        "https://veramate.vercel.app",  # Production frontend on Vercel
         "https://veramate-*.vercel.app", # Vercel preview deployments
+        "https://*.vercel.app",  # Any Vercel app (be more specific in production)
     ]
     ALLOWED_METHODS: List[str] = ["*"]
     ALLOWED_HEADERS: List[str] = ["*"]
