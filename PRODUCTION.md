@@ -3,12 +3,12 @@
 This checklist captures the gaps identified for launching the MVP to production without any local storage.
 
 ### High-priority blockers (fix before launch)
-- Secrets in repo
-  - Remove `api/.env` from git, purge from history, and rotate exposed keys.
+- Secrets in repo [DONE]
+  - ✅ `api/.env` is not in git (verified - properly gitignored)
   - Configure all secrets via deployment environment variables.
-- Vector DB uses local disk
-  - Switch to managed Qdrant: set `QDRANT_MODE=cloud`, provide `QDRANT_URL` and `QDRANT_API_KEY`.
-  - Remove tracked local data at `api/qdrant_storage/` and ignore it going forward.
+- Vector DB uses local disk [DONE]
+  - ✅ Switch to managed Qdrant: set `QDRANT_MODE=cloud`, provide `QDRANT_URL` and `QDRANT_API_KEY`.
+  - ✅ Remove tracked local data at `api/qdrant_storage/` and ignore it going forward.
 - PDFs written to filesystem
   - Stop writing to `project/data/` and any local paths.
   - Store PDFs in object storage (e.g., S3/R2/Supabase) and keep URLs.
