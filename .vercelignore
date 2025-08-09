@@ -1,0 +1,11 @@
+# Ignore API directory completely (deployed to Fly.io)
+api/
+notebooks/
+project/
+*.pyc
+__pycache__/
+.env
+.env.local
+*.md
+.git/
+.gitignore
