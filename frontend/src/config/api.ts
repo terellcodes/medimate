@@ -22,7 +22,8 @@ const getApiBaseUrl = () => {
       return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     }
     // In production, use the same Vercel domain for API
-    return process.env.NEXT_PUBLIC_API_URL || window.location.origin;
+    // Check if window exists (client-side only)
+    return process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   };
 
 export const API_BASE_URL = getApiBaseUrl();
