@@ -56,3 +56,6 @@ TODO.md
 
 project/data/
 project/STEP_0_MISSING_REQUIREMENTS.md
+
+# Qdrant local storage (use cloud in production)
+api/qdrant_storage/
