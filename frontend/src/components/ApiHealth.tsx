@@ -21,7 +21,7 @@ export default function ApiHealth() {
                 const data = await response.json();
                 setHealth(data);
                 setError(null);
-            } catch (err) {
+            } catch {
                 setError('Failed to connect to API');
                 setHealth(null);
             } finally {

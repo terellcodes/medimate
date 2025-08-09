@@ -11,7 +11,7 @@ export default function PredicateHero({ onTryNowClick }: PredicateHeroProps) {
             Find Your Perfect Predicate Device
           </h1>
           <p className="text-xl text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Search FDA's comprehensive 510(k) database with AI-powered precision to discover 
+            Search FDA&apos;s comprehensive 510(k) database with AI-powered precision to discover 
             the ideal predicate devices for your substantial equivalence analysis. Access 
             official device classifications and download PDFs instantly.
           </p>

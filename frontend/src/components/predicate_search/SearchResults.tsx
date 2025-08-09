@@ -129,7 +129,7 @@ export default function SearchResults({
             <span className="font-medium">Search criteria:</span>
             {searchParams.searchTerm && (
               <span className="ml-2 px-2 py-1 bg-white rounded text-slate-700">
-                "{searchParams.searchTerm}"
+                &ldquo;{searchParams.searchTerm}&rdquo;
               </span>
             )}
             {searchParams.productCode && (

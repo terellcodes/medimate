@@ -133,7 +133,7 @@ export default function SearchForm({ onSearch, isLoading }: SearchFormProps) {
       <div className="mt-6 p-4 bg-slate-50 rounded-lg">
         <h4 className="text-sm font-medium text-slate-800 mb-2">Search Tips:</h4>
         <ul className="text-xs text-slate-900 space-y-1">
-          <li>• Use specific terms like "cardiac catheter" rather than just "catheter"</li>
+          <li>• Use specific terms like &ldquo;cardiac catheter&rdquo; rather than just &ldquo;catheter&rdquo;</li>
           <li>• Product codes provide more precise results (e.g., DYB for cardiac catheters)</li>
           <li>• Combine both keyword and product code for best results</li>
         </ul>

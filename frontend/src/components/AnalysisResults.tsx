@@ -85,7 +85,7 @@ export default function AnalysisResults({ result }: AnalysisResultsProps) {
                 <div className="text-xs font-medium text-gray-500 mb-1">
                   Source: {citation.tool === 'fda_guidelines' ? 'FDA Guidelines' : 'Predicate Device'}
                 </div>
-                <p className="text-sm text-gray-700 italic">"{citation.text}"</p>
+                <p className="text-sm text-gray-700 italic">&ldquo;{citation.text}&rdquo;</p>
               </div>
             ))}
           </div>
