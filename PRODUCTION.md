@@ -9,7 +9,7 @@ This checklist captures the gaps identified for launching the MVP to production 
 - Vector DB uses local disk [DONE]
   - ✅ Switch to managed Qdrant: set `QDRANT_MODE=cloud`, provide `QDRANT_URL` and `QDRANT_API_KEY`.
   - ✅ Remove tracked local data at `api/qdrant_storage/` and ignore it going forward.
-- PDFs written to filesystem
+- ✅ PDFs written to filesystem
   - Stop writing to `project/data/` and any local paths.
   - Store PDFs in object storage (e.g., S3/R2/Supabase) and keep URLs.
   - Vectorize from bytes or remote URL, not a local file path.
@@ -80,3 +80,56 @@ This checklist captures the gaps identified for launching the MVP to production 
 ### Items to remove from repository
 - `api/.env` (and any other committed secrets)
 - `api/qdrant_storage/` (local vector store files)
+
+## Cold Start Optimization
+
+### Problem
+Render free tier instances spin down after 15 minutes of inactivity, causing 1-3 minute cold starts that severely impact user experience.
+
+### Solution: Keep-Alive Pinging (FREE)
+
+**Answer: Yes, pinging every 10 minutes is highly effective and completely FREE!**
+
+#### Why It Works
+- Render spins down after 15 minutes of inactivity
+- Pinging every 10-14 minutes keeps the service warm 24/7
+- Eliminates cold starts entirely at zero cost
+
+#### Recommended: GitHub Actions (Built-in & Free)
+Already configured in `.github/workflows/keep-warm.yml`:
+- Runs every 10 minutes automatically
+- 2,000 free minutes/month (more than enough)
+- No external services needed
+- Push to repo and it starts working
+
+#### Alternative Free Services
+
+**UptimeRobot** (https://uptimerobot.com)
+- 50 free monitors
+- 5-minute check intervals
+- Email alerts when down
+
+**Cron-job.org** (https://cron-job.org)
+- Unlimited free cron jobs
+- 1-minute minimum intervals
+- Simple HTTP GET requests
+
+**Better Uptime** (https://betteruptime.com)
+- 10 free monitors
+- 3-minute check intervals
+- Status page included
+
+### Cost Comparison
+
+| Solution | Monthly Cost | Setup Time | Reliability |
+|----------|-------------|------------|-------------|
+| GitHub Actions | $0 | 2 min | Excellent |
+| UptimeRobot | $0 | 5 min | Excellent |
+| Cron-job.org | $0 | 5 min | Good |
+| Render Paid Tier | $7 | 1 min | Perfect |
+
+### Implementation Status
+✅ GitHub Actions workflow created
+✅ Pings `/health` endpoint every 10 minutes
+✅ Lightweight health check (no heavy dependencies)
+✅ Zero additional infrastructure needed
