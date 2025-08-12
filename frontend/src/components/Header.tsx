@@ -29,6 +29,12 @@ export default function Header() {
             >
               Find Predicates
             </Link>
+            <Link 
+              href="/chat" 
+              className="text-slate-300 hover:text-white transition duration-200"
+            >
+              Chat Assistant
+            </Link>
           </nav>
         </div>
       </div>

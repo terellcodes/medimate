@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+WORKDIR /appx
+
+# Install minimal dependencies
+RUN pip install fastapi uvicorn
+
+# Create a simple test app
+COPY << 'EOF' main_minimal.py
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello from Fly.io!"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
+EOF
+
+EXPOSE 8000
+CMD ["uvicorn", "main_minimal:app", "--host", "0.0.0.0", "--port", "8000"]
