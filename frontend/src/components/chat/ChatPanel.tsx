@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAssistant } from '@assistant-ui/react';
-import { Building2, MessageSquare, Send } from 'lucide-react';
+import { Building2, MessageSquare, Send, PanelRightOpen, PanelRightClose } from 'lucide-react';
 import WorkflowPills from './WorkflowPills';
 
 interface Device {
@@ -18,9 +18,11 @@ interface Device {
 interface ChatPanelProps {
   selectedDevice: Device | null;
   sessionId: string | null;
+  onToggleWorkspace: () => void;
+  isWorkspaceVisible: boolean;
 }
 
-export default function ChatPanel({ selectedDevice, sessionId }: ChatPanelProps) {
+export default function ChatPanel({ selectedDevice, sessionId, onToggleWorkspace, isWorkspaceVisible }: ChatPanelProps) {
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Array<{
     id: string;
@@ -134,11 +136,24 @@ export default function ChatPanel({ selectedDevice, sessionId }: ChatPanelProps)
               )}
             </div>
           </div>
-          {sessionId && (
-            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              Session: {sessionId.split('-').slice(-1)[0]}
-            </div>
-          )}
+          <div className="flex items-center space-x-2">
+            {sessionId && (
+              <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                Session: {sessionId.split('-').slice(-1)[0]}
+              </div>
+            )}
+            <button
+              onClick={onToggleWorkspace}
+              className="p-2 hover:bg-gray-100 rounded transition-colors"
+              title={isWorkspaceVisible ? "Hide workspace" : "Show workspace"}
+            >
+              {isWorkspaceVisible ? (
+                <PanelRightClose className="w-4 h-4 text-gray-500" />
+              ) : (
+                <PanelRightOpen className="w-4 h-4 text-gray-500" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart3, FileText, GitCompare, Settings, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
+import { BarChart3, FileText, GitCompare, Settings, TrendingUp, CheckCircle, AlertCircle, X } from 'lucide-react';
 
 interface Device {
   id: string;
@@ -15,9 +15,10 @@ interface Device {
 
 interface WorkspacePanelProps {
   selectedDevice: Device | null;
+  onCollapse: () => void;
 }
 
-export default function WorkspacePanel({ selectedDevice }: WorkspacePanelProps) {
+export default function WorkspacePanel({ selectedDevice, onCollapse }: WorkspacePanelProps) {
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison' | 'documents' | 'settings'>('analysis');
 
   const tabs = [
@@ -251,13 +252,22 @@ export default function WorkspacePanel({ selectedDevice }: WorkspacePanelProps) 
   return (
     <div className="h-full bg-white border-l border-gray-200 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Workspace</h2>
-        {selectedDevice && (
-          <p className="text-sm text-gray-500 mt-1">
-            Working on: {selectedDevice.kNumber}
-          </p>
-        )}
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Workspace</h2>
+          {selectedDevice && (
+            <p className="text-sm text-gray-500 mt-1">
+              Working on: {selectedDevice.kNumber}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={onCollapse}
+          className="p-1 hover:bg-gray-100 rounded transition-colors"
+          title="Hide workspace"
+        >
+          <X className="w-4 h-4 text-gray-500" />
+        </button>
       </div>
 
       {/* Tabs */}

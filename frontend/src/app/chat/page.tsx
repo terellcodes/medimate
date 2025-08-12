@@ -20,6 +20,14 @@ interface Device {
   description: string;
 }
 
+// Add interface for chat sessions
+interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  lastActivity: string;
+}
+
 const DUMMY_DEVICES: Device[] = [
   {
     id: '1',
@@ -71,7 +79,9 @@ const DUMMY_DEVICES: Device[] = [
 export default function ChatPage() {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
+  const [isWorkspaceVisible, setIsWorkspaceVisible] = useState(true);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
 
   const handleDeviceSelect = (device: Device) => {
     setSelectedDevice(device);
@@ -80,12 +90,34 @@ export default function ChatPage() {
 
   const handleCreateSession = (deviceId: string) => {
     const sessionId = `session-${deviceId}-${Date.now()}`;
+    const newSession: ChatSession = {
+      id: sessionId,
+      title: `Analysis Session ${chatSessions.length + 1}`,
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    };
+    
+    setChatSessions(prev => [...prev, newSession]);
     setCurrentSessionId(sessionId);
     console.log(`Created new session: ${sessionId} for device: ${deviceId}`);
   };
 
+  const handleSelectSession = (sessionId: string) => {
+    setCurrentSessionId(sessionId);
+  };
+
   const handleCollapseDetails = () => {
     setIsDetailsVisible(false);
+  };
+
+  const handleToggleWorkspace = () => {
+    setIsWorkspaceVisible(!isWorkspaceVisible);
+  };
+
+  const handleNewDevice = () => {
+    // TODO: Implement new device creation logic
+    console.log('Creating new device...');
+    alert('New device creation functionality will be implemented here');
   };
 
   return (
@@ -112,6 +144,7 @@ export default function ChatPage() {
               devices={DUMMY_DEVICES}
               selectedDevice={selectedDevice}
               onDeviceSelect={handleDeviceSelect}
+              onNewDevice={handleNewDevice}
             />
           </Allotment.Pane>
 
@@ -123,6 +156,8 @@ export default function ChatPage() {
                 onCreateSession={handleCreateSession}
                 onCollapse={handleCollapseDetails}
                 currentSessionId={currentSessionId}
+                chatSessions={chatSessions}
+                onSelectSession={handleSelectSession}
               />
             </Allotment.Pane>
           )}
@@ -132,15 +167,20 @@ export default function ChatPage() {
             <ChatPanel 
               selectedDevice={selectedDevice}
               sessionId={currentSessionId}
+              onToggleWorkspace={handleToggleWorkspace}
+              isWorkspaceVisible={isWorkspaceVisible}
             />
           </Allotment.Pane>
 
-          {/* Workspace Panel - Right side */}
-          <Allotment.Pane preferredSize={400} minSize={350}>
-            <WorkspacePanel 
-              selectedDevice={selectedDevice}
-            />
-          </Allotment.Pane>
+          {/* Workspace Panel - Right side - Collapsible */}
+          {isWorkspaceVisible && (
+            <Allotment.Pane preferredSize={400} minSize={350}>
+              <WorkspacePanel 
+                selectedDevice={selectedDevice}
+                onCollapse={handleToggleWorkspace}
+              />
+            </Allotment.Pane>
+          )}
         </Allotment>
       </div>
     </div>
