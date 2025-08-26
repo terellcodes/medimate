@@ -8,10 +8,10 @@ export default function Header() {
           <Link href="/" className="flex items-center">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">V</span>
+                <span className="text-white font-bold text-sm">M</span>
               </div>
               <h1 className="text-2xl font-bold text-white">
-                Vera
+                MediMate
               </h1>
             </div>
           </Link>
