@@ -19,6 +19,7 @@ class AnalysisResult(BaseModel):
 class AnalysisRequest(BaseModel):
     """Request for device analysis."""
     new_device_indication: str
+    technical_characteristics: str
 
 
 class AnalysisResponse(BaseModel):

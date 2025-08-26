@@ -14,7 +14,10 @@ async def analyze_device_equivalence(request: AnalysisRequest):
     to determine substantial equivalence based on FDA guidelines and the predicate device.
     """
     try:
-        result = await analysis_service.analyze_device_equivalence(request.new_device_indication)
+        result = await analysis_service.analyze_device_equivalence(
+            request.new_device_indication, 
+            request.technical_characteristics
+        )
         
         if result["success"]:
             analysis_data = result["analysis"]

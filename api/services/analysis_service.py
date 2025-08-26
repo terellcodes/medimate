@@ -27,8 +27,8 @@ class AnalysisService:
         if self.llm is None:
             settings = get_settings()
             self.llm = ChatOpenAI(
-                model="gpt-4o-mini", 
-                temperature=0,
+                model="gpt-4o", 
+                temperature=0.3,
                 openai_api_key=settings.OPENAI_API_KEY
             )
         return self.llm
@@ -71,7 +71,7 @@ class AnalysisService:
     def _get_system_prompt(self) -> str:
         """Get the system prompt for the regulatory agent."""
         return """
-You are an intelligent regulatory agent whose task is to evaluate whether a new medical device is *substantially equivalent* to a predicate device under the FDA's 510(k) program, focusing specifically on **whether the intended use (as captured in the Indications for Use statement)** matches.
+You are an intelligent regulatory agent whose task is to evaluate whether a new medical device is *substantially equivalent* to a predicate device under the FDA's 510(k) program, focusing specifically on **whether the intended use (as captured in the Indications for Use statement) and technical characteristics** match.
 
 You have access to two tools:
 - `retrieve_fda_guidelines(query)` — to retrieve relevant snippets from the FDA's *"The 510(k) Program: Evaluating Substantial Equivalence…"* guidance, especially definitions and examples of "intended use".
@@ -80,13 +80,31 @@ You have access to two tools:
 Do not ask follow-up questions.
 
 **Your task flow:**
-1. Use `retrieve_fda_guidelines` to fetch text defining *intended use*, including factors FDA uses to assess equivalence (e.g., disease target, clinical purpose, patient population). Always use this tool first. Call this tool at least twice to deeply understand required guidelines.
-2. Use `retrieve_predicate_device_details` to fetch the predicate device details. Call this tool at least twice. The first call to this tool should always use an exact query of "Indications for Use". Subsequent calls should be to fetch other details as needed. 
+1. Use `retrieve_fda_guidelines` to fetch text defining *intended use* and *technical characteristics*, including factors FDA uses to assess equivalence. Always use this tool first. 
+Call this tool multiple times to complete each step listed below. (6 times for intended use and 5 times for technical characteristics)
+    - Here are some terms you can use to fetch the relevant guidelines:
+        - For Intended Use or Indication for Use Analysis:
+            - Step 1: query: "intended use"
+            - Step 2: query" "explanation of Intended use and indication for use"
+            - Step 3: query: "determining intended use"
+            - Step 4: query: "determining when indivations for use result in a new intended use"
+            - Step 5: query: "changes in indication for use that may result in a new intended use"
+            - Step 6: query: "indication for use - illustrative examples"
+        - For Comparison of Technical Characteristics:
+            - Step 1: query: "technical characteristics"
+            - Step 2: query: "technical characteristics - identification of technicalological characteristics of the new and predicate device"
+            - Step 3: query: "technical characteristics - identification of differences between in technicological characteristics between the new and predicate device"
+            - Step 4: query: "technical characteristics - determination of whether the differences in technologic characteristics raise different questions of safety and effectiveness"
+            - Step 5: query; "technological characteristics - illustrative examples"
+    - Use this tool recursively querying for more information as you get deeper into the analysis.
+2. Use `retrieve_predicate_device_details` to fetch the predicate device details. Call this tool at least twice. The first call to this tool should always use an exact query of "Indications for Use". Subsequent calls should be to fetch technical specifications, device description, and other details as needed. 
 3. Use the tools above as many times as needed to provide the context needed to complete the steps below.
-4. Compare the new device's Indications for Use (provided by user) with the predicate's, applying FDA's logic from the guidance:
-5. Determine if the intended use is **the same**. If yes → `substantially_equivalent = true`. If no → `false`.
-6. Provide **bullet-point reasons**, citing guidance snippets and predicate/new statements.
-7. If not equivalent, provide **suggestions** to revise indications (e.g. limit population, match disease target) or recommend FDA Pre‑Submission.
+4. Compare the new device's Indications for Use AND Technical Characteristics (provided by user) with the predicate's, applying FDA's logic from the guidance:
+   - Analyze intended use alignment (disease target, patient population, clinical purpose)
+   - Analyze technical characteristic similarities (materials, design, operating principles, performance specifications)
+5. Determine if both intended use AND technical characteristics are **substantially equivalent**. Both must align for `substantially_equivalent = true`. If either differs significantly → `false`.
+6. Provide **bullet-point reasons**, citing guidance snippets and predicate/new statements for both intended use and technical characteristics.
+7. If not equivalent, provide **suggestions** to revise indications or technical specifications (e.g. match materials, adjust operating parameters, limit population, match disease target) or recommend FDA Pre‑Submission.
 
 Make the reasons, citations, and suggestions descriptive and actionable. 2 sentences max for each.
 **Output format (JSON):**
@@ -103,7 +121,7 @@ Make the reasons, citations, and suggestions descriptive and actionable. 2 sente
 ```
 """
     
-    async def analyze_device_equivalence(self, new_device_indication: str) -> Dict[str, Any]:
+    async def analyze_device_equivalence(self, new_device_indication: str, technical_characteristics: str) -> Dict[str, Any]:
         """Analyze if new device is substantially equivalent to predicate device."""
         try:
             # Create initial state with system prompt and user query
@@ -113,6 +131,9 @@ Make the reasons, citations, and suggestions descriptive and actionable. 2 sente
                     HumanMessage(content=f"""
 New Device — Indications for Use:
 "{new_device_indication}"
+
+New Device — Technical Characteristics:
+"{technical_characteristics}"
 """)
                 ]
             }

@@ -97,6 +97,7 @@ class BulkIFUResponse(BaseModel):
 class PredicateEquivalenceRequest(BaseModel):
     """Request for checking substantial equivalence against a specific predicate."""
     device_intended_use: str
+    technical_characteristics: str
     predicate_k_number: str
 
 

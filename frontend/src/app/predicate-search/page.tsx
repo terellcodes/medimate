@@ -29,6 +29,7 @@ export default function PredicateSearchPage() {
   
   // Substantial equivalence checking state
   const [deviceIntendedUse, setDeviceIntendedUse] = useState('');
+  const [technicalCharacteristics, setTechnicalCharacteristics] = useState('');
   const [equivalenceResults, setEquivalenceResults] = useState<Map<string, AnalysisResult>>(new Map());
   const [checkingEquivalence, setCheckingEquivalence] = useState<Set<string>>(new Set());
   
@@ -144,8 +145,8 @@ export default function PredicateSearchPage() {
   };
 
   const handleCheckEquivalence = async (extraction: IFUExtraction) => {
-    if (!deviceIntendedUse.trim()) {
-      alert('Please enter your device\'s intended use first');
+    if (!deviceIntendedUse.trim() || !technicalCharacteristics.trim()) {
+      alert('Please enter both your device\'s intended use and technical characteristics first');
       return;
     }
 
@@ -160,6 +161,7 @@ export default function PredicateSearchPage() {
         },
         body: JSON.stringify({
           device_intended_use: deviceIntendedUse,
+          technical_characteristics: technicalCharacteristics,
           predicate_k_number: extraction.k_number
         }),
       });
@@ -370,24 +372,43 @@ export default function PredicateSearchPage() {
                       ⚖️
                     </div>
                     <h4 className="text-lg font-semibold text-slate-800">
-                      Your Device&apos;s Intended Use
+                      Your Device Information
                     </h4>
                   </div>
-                  <div className="space-y-3">
-                    <label htmlFor="device-intended-use" className="block text-sm font-medium text-slate-700">
-                      Enter the intended use statement for your device to check substantial equivalence:
-                    </label>
-                    <textarea
-                      id="device-intended-use"
-                      value={deviceIntendedUse}
-                      onChange={(e) => setDeviceIntendedUse(e.target.value)}
-                      placeholder="Example: The XYZ Device is intended for use in measuring blood glucose levels in patients with diabetes for glucose monitoring to aid in diabetes management."
-                      className="w-full p-4 border border-slate-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-800 placeholder-slate-500"
-                      rows={4}
-                    />
-                    <p className="text-xs text-slate-600">
-                      💡 <span className="font-medium">Tip:</span> Provide a clear and specific description of what your device is intended to do, similar to how predicate devices describe their intended use.
-                    </p>
+                  <div className="space-y-6">
+                    <div>
+                      <label htmlFor="device-intended-use" className="block text-sm font-medium text-slate-700">
+                        Enter the intended use statement for your device to check substantial equivalence:
+                      </label>
+                      <textarea
+                        id="device-intended-use"
+                        value={deviceIntendedUse}
+                        onChange={(e) => setDeviceIntendedUse(e.target.value)}
+                        placeholder="For balloon dilatation of a hemodynamically significant coronary artery or bypass graft stenosis in patients evidencing coronary ischemia, to improve myocardial perfusion"
+                        className="w-full p-4 border border-slate-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-800 placeholder-slate-500"
+                        rows={4}
+                      />
+                      <p className="text-xs text-slate-600">
+                        💡 <span className="font-medium">Tip:</span> Provide a clear and specific description of what your device is intended to do, similar to how predicate devices describe their intended use.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="device-technical-characteristics" className="block text-sm font-medium text-slate-700">
+                        Enter the technical characteristics of your device:
+                      </label>
+                      <textarea
+                        id="device-technical-characteristics"
+                        value={technicalCharacteristics}
+                        onChange={(e) => setTechnicalCharacteristics(e.target.value)}
+                        placeholder="Single-use balloon catheter with semi-compliant balloon, 0.014&quot; guidewire compatibility, balloon diameters 2.0-4.0mm, lengths 8-40mm, rated burst pressure 14-20 ATM..."
+                        className="w-full p-4 border border-slate-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-slate-800 placeholder-slate-500"
+                        rows={4}
+                      />
+                      <p className="text-xs text-slate-600">
+                        💡 <span className="font-medium">Tip:</span> Include key technical specifications like materials, dimensions, operating parameters, and performance characteristics.
+                      </p>
+                    </div>
                   </div>
                 </div>
                 
@@ -513,9 +534,9 @@ export default function PredicateSearchPage() {
                         {extraction.extraction_status === 'success' && extraction.ifu_text && (
                           <button
                             onClick={() => handleCheckEquivalence(extraction)}
-                            disabled={!deviceIntendedUse.trim() || checkingEquivalence.has(extraction.k_number)}
+                            disabled={!deviceIntendedUse.trim() || !technicalCharacteristics.trim() || checkingEquivalence.has(extraction.k_number)}
                             className="bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-600 transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={!deviceIntendedUse.trim() ? 'Please enter your device\'s intended use above' : 'Check if this predicate device is substantially equivalent'}
+                            title={!deviceIntendedUse.trim() || !technicalCharacteristics.trim() ? 'Please enter both your device\'s intended use and technical characteristics above' : 'Check if this predicate device is substantially equivalent'}
                           >
                             {checkingEquivalence.has(extraction.k_number) ? (
                               <>

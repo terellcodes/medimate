@@ -45,7 +45,7 @@ export default function Home() {
     setAnalysisResult(null); // Reset analysis when new document is uploaded
   };
 
-  const handleAnalyzeDevice = async (indication: string) => {
+  const handleAnalyzeDevice = async (indication: string, technicalCharacteristics: string) => {
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
@@ -56,7 +56,8 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          new_device_indication: indication
+          new_device_indication: indication,
+          technical_characteristics: technicalCharacteristics
         }),
       });
 

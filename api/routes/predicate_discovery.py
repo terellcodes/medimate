@@ -157,6 +157,12 @@ async def check_predicate_equivalence(request: PredicateEquivalenceRequest):
                 detail="Device intended use cannot be empty"
             )
         
+        if not request.technical_characteristics.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Technical characteristics cannot be empty"
+            )
+        
         if not request.predicate_k_number.strip():
             raise HTTPException(
                 status_code=400,
@@ -182,7 +188,10 @@ async def check_predicate_equivalence(request: PredicateEquivalenceRequest):
             # Step 3: Run analysis using existing analysis service
             from services.analysis_service import analysis_service
             
-            result = await analysis_service.analyze_device_equivalence(request.device_intended_use)
+            result = await analysis_service.analyze_device_equivalence(
+                request.device_intended_use, 
+                request.technical_characteristics
+            )
         finally:
             # Always clear the predicate context after analysis
             rag_service.clear_current_predicate()
