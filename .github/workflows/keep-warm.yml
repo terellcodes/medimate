@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Ping API Health Check
         run: |
-          curl -f https://veramate-api.onrender.com/health || exit 0
+          curl -f https://medimate-api.onrender.com/health || exit 0
           echo "API pinged at $(date)"
       
       # Optional: Add more detailed health check
       - name: Check API Status
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://veramate-api.onrender.com/health)
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://medimate-api.onrender.com/health)
           if [ $response -eq 200 ]; then
             echo "✅ API is healthy (HTTP $response)"
           else

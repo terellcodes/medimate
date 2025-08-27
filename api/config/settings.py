@@ -5,8 +5,8 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Application Settings
-    APP_NAME: str = "Vera API"
-    APP_DESCRIPTION: str = "A FastAPI backend for the Vera project"
+    APP_NAME: str = "MediMate API"
+    APP_DESCRIPTION: str = "A FastAPI backend for the MediMate project"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
     
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     
     # LangSmith Settings
     LANGCHAIN_TRACING_V2: str = "false"
-    LANGCHAIN_PROJECT: str = "Vera"
+    LANGCHAIN_PROJECT: str = "MediMate"
     LANGSMITH_API_KEY: str = ""
     
     # Qdrant Configuration
@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",  # Local frontend
         "http://127.0.0.1:3000",
-        "https://veramate.vercel.app",  # Production frontend on Vercel
-        "https://veramate-*.vercel.app", # Vercel preview deployments
+        "https://medimate.vercel.app",  # Production frontend on Vercel
+        "https://medimate-*.vercel.app", # Vercel preview deployments
         "https://*.vercel.app",  # Any Vercel app (be more specific in production)
         "https://*.onrender.com",  # Render domains (remove in production)
     ]

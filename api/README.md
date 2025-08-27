@@ -1,6 +1,6 @@
-# Vera API
+# MediMate API
 
-A FastAPI backend for the Vera project.
+A FastAPI backend for the MediMate project.
 
 ## Project Structure
 
@@ -199,8 +199,8 @@ When deploying to Vercel, you need to configure the following environment variab
 
 | Variable | Description | Default Value |
 |----------|-------------|---------------|
-| `APP_NAME` | Name of your API | `"Vera API"` |
-| `APP_DESCRIPTION` | API description | `"A FastAPI backend for the Vera project"` |
+| `APP_NAME` | Name of your API | `"MediMate API"` |
+| `APP_DESCRIPTION` | API description | `"A FastAPI backend for the MediMate project"` |
 | `APP_VERSION` | API version | `"0.1.0"` |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `https://your-domain.vercel.app,https://*.vercel.app` |
 

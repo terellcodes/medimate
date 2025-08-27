@@ -65,7 +65,7 @@ async def test_vector_store():
 
 async def main():
     """Run all tests."""
-    print("🔧 Testing VeraMate API Structure\n")
+    print("🔧 Testing MediMate API Structure\n")
     
     # Test imports
     imports_ok = await test_imports()

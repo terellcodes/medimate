@@ -23,7 +23,7 @@ const getApiBaseUrl = () => {
     }
     // In production, use Render API endpoint or environment variable
     // Check if window exists (client-side only)
-    return process.env.NEXT_PUBLIC_API_URL || 'https://veramate-api.onrender.com';
+    return process.env.NEXT_PUBLIC_API_URL || 'https://medimate-api.onrender.com';
   };
 
 export const API_BASE_URL = getApiBaseUrl();

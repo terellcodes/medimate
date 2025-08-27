@@ -56,7 +56,7 @@ export default function SearchForm({ onSearch, isLoading }: SearchFormProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="e.g., catheter, stent, defibrillator"
-              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder:text-slate-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-slate-900 placeholder:text-slate-500"
             />
             <p className="text-xs text-slate-900 mt-1">
               Search by device name or technology
@@ -73,7 +73,7 @@ export default function SearchForm({ onSearch, isLoading }: SearchFormProps) {
               value={productCode}
               onChange={(e) => setProductCode(e.target.value.toUpperCase())}
               placeholder="e.g., DYB, NIQ, BSZ"
-              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder:text-slate-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-slate-900 placeholder:text-slate-500"
             />
             <p className="text-xs text-slate-900 mt-1">
               FDA product classification code

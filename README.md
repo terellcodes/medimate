@@ -72,7 +72,7 @@ graph TB
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd veramate
+   cd medimate
    ```
 
 2. **Set up the API backend**

@@ -69,7 +69,7 @@ def test_analysis():
         return False
 
 if __name__ == "__main__":
-    print("🧪 Testing VeraMate API\n")
+    print("🧪 Testing MediMate API\n")
     
     print("1. Testing PDF Upload...")
     upload_ok = test_upload()
